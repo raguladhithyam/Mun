@@ -1,10 +1,4 @@
-const { 
-  getDocument, 
-  updateDocument, 
-  deleteDocument,
-  COLLECTIONS 
-} = require('../utils/firebase');
-const { deleteFromCloudinary, getPublicIdFromUrl } = require('../utils/cloudinaryUploader');
+const { getCollection, COLLECTIONS } = require('../utils/firebase');
 
 module.exports = async (req, res) => {
   // Enable CORS
@@ -18,191 +12,87 @@ module.exports = async (req, res) => {
     return;
   }
 
-  try {
-    // Extract registration ID from URL
-    const urlParts = req.url.split('/');
-    const registrationId = urlParts[urlParts.length - 1];
-    
-    console.log(`🔍 Registration operation: ${req.method} for ID: ${registrationId}`);
-    console.log(`📍 Request URL: ${req.url}`);
-    console.log(`🛣️ Request path: ${req.path}`);
-
-    if (!registrationId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Registration ID is required'
-      });
-    }
-
-    // Handle different HTTP methods
-    switch (req.method) {
-      case 'GET':
-        return await handleGetRegistration(req, res, registrationId);
-      case 'PUT':
-        return await handleUpdateRegistration(req, res, registrationId);
-      case 'DELETE':
-        return await handleDeleteRegistration(req, res, registrationId);
-      default:
-        return res.status(405).json({
-          success: false,
-          message: 'Method not allowed'
-        });
-    }
-
-  } catch (error) {
-    console.error('Registration operation error:', error);
-    res.status(500).json({
+  // Only allow GET requests
+  if (req.method !== 'GET') {
+    return res.status(405).json({
       success: false,
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+      message: 'Method not allowed'
     });
   }
-};
 
-// Helper function to delete registration files
-async function deleteRegistrationFiles(files) {
-  if (!files || typeof files !== 'object') return;
-  
-  const deletePromises = Object.values(files).map(async (fileUrl) => {
-    if (typeof fileUrl === 'string') {
-      const publicId = getPublicIdFromUrl(fileUrl);
-      if (publicId) {
-        try {
-          await deleteFromCloudinary(publicId);
-        } catch (error) {
-          console.error('Error deleting file:', error);
-        }
-      }
-    }
-  });
-  
-  await Promise.all(deletePromises);
-}
-
-// GET registration
-async function handleGetRegistration(req, res, id) {
   try {
-    const registration = await getDocument(COLLECTIONS.REGISTRATIONS, id);
+    const { 
+      page = 1, 
+      limit = 50, 
+      search, 
+      committee, 
+      position, 
+      year,
+      status 
+    } = req.query;
 
-    if (!registration) {
-      return res.status(404).json({
-        success: false,
-        message: 'Registration not found'
+    let registrations = await getCollection(COLLECTIONS.REGISTRATIONS, 'submittedAt', 'desc');
+
+    // Apply filters
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      registrations = registrations.filter(reg => 
+        reg.name.toLowerCase().includes(searchTerm) ||
+        reg.email.toLowerCase().includes(searchTerm) ||
+        reg.phone.includes(searchTerm) ||
+        reg.college.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    if (committee) {
+      registrations = registrations.filter(reg => {
+        const committees = Array.isArray(reg.committees) 
+          ? reg.committees 
+          : JSON.parse(reg.committees || '[]');
+        return committees.includes(committee);
       });
     }
 
-    res.json({
+    if (position) {
+      registrations = registrations.filter(reg => {
+        const positions = Array.isArray(reg.positions) 
+          ? reg.positions 
+          : JSON.parse(reg.positions || '[]');
+        return positions.includes(position);
+      });
+    }
+
+    if (year) {
+      registrations = registrations.filter(reg => reg.year === year);
+    }
+
+    if (status) {
+      registrations = registrations.filter(reg => reg.status === status);
+    }
+
+    // Pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedRegistrations = registrations.slice(startIndex, endIndex);
+
+    res.status(200).json({
       success: true,
-      data: registration
+      data: paginatedRegistrations,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(registrations.length / limit),
+        totalRecords: registrations.length,
+        hasNext: endIndex < registrations.length,
+        hasPrev: startIndex > 0
+      }
     });
 
   } catch (error) {
-    console.error('Get registration error:', error);
+    console.error('Get registrations error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch registration'
+      message: 'Failed to fetch registrations',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
-}
-
-// UPDATE registration
-async function handleUpdateRegistration(req, res, id) {
-  try {
-    const updateData = req.body;
-
-    // Remove fields that shouldn't be updated
-    delete updateData.id;
-    delete updateData.submittedAt;
-    delete updateData.createdAt;
-
-    // Validate email if being updated
-    if (updateData.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(updateData.email)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid email format'
-        });
-      }
-      updateData.email = updateData.email.toLowerCase();
-    }
-
-    // Validate numeric fields if being updated
-    const numericFields = ['munsParticipated', 'munsWithAwards', 'munsChaired', 'year'];
-    for (const field of numericFields) {
-      if (updateData[field] !== undefined) {
-        const value = parseInt(updateData[field]);
-        if (isNaN(value) || value < 0) {
-          return res.status(400).json({
-            success: false,
-            message: `${field} must be a non-negative number`
-          });
-        }
-        updateData[field] = value;
-      }
-    }
-
-    const success = await updateDocument(COLLECTIONS.REGISTRATIONS, id, updateData);
-
-    if (!success) {
-      return res.status(404).json({
-        success: false,
-        message: 'Registration not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Registration updated successfully'
-    });
-
-  } catch (error) {
-    console.error('Update registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update registration'
-    });
-  }
-}
-
-// DELETE registration
-async function handleDeleteRegistration(req, res, id) {
-  try {
-    console.log(`🗑️ DELETE registration request for ID: ${id}`);
-
-    // Get registration to access file URLs
-    const registration = await getDocument(COLLECTIONS.REGISTRATIONS, id);
-    
-    if (!registration) {
-      return res.status(404).json({
-        success: false,
-        message: 'Registration not found'
-      });
-    }
-
-    // Delete associated files from Cloudinary
-    if (registration.files) {
-      try {
-        await deleteRegistrationFiles(registration.files);
-      } catch (fileDeleteError) {
-        console.error('File deletion error:', fileDeleteError);
-        // Continue with registration deletion even if file deletion fails
-      }
-    }
-
-    // Delete registration from Firestore
-    await deleteDocument(COLLECTIONS.REGISTRATIONS, id);
-
-    res.json({
-      success: true,
-      message: 'Registration deleted successfully'
-    });
-
-  } catch (error) {
-    console.error('Delete registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete registration'
-    });
-  }
-} 
+}; 
