@@ -112,13 +112,14 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-1) 100%);
+    background: var(--primary);
     color: var(--background);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
+    background: #142580;
 }
 
 .btn-outline {
@@ -218,6 +219,13 @@ body {
     font-size: 0.9rem;
 }
 
+/* Red asterisk for required fields */
+.form-group label.required::after {
+    content: ' *';
+    color: #ef4444;
+    font-weight: bold;
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -290,6 +298,18 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1rem;
     margin-top: 1rem;
+}
+
+.checkbox-group.vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 100%;
+}
+
+.checkbox-group.vertical .checkbox-item {
+    width: 100%;
+    margin-bottom: 0.5rem;
 }
 
 .checkbox-item {

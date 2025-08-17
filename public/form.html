@@ -53,32 +53,32 @@
                         
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="name">Full Name *</label>
+                                <label for="name" class="required">Full Name *</label>
                                 <input type="text" id="name" name="name" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="email">Personal Email Address *</label>
+                                <label for="email" class="required">Personal Email Address *</label>
                                 <input type="email" id="email" name="email" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="phone">Phone Number *</label>
+                                <label for="phone" class="required">Phone Number *</label>
                                 <input type="tel" id="phone" name="phone" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="college">College/Institution *</label>
+                                <label for="college" class="required">College/Institution *</label>
                                 <input type="text" id="college" name="college" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="department">Department of Study *</label>
+                                <label for="department" class="required">Department of Study *</label>
                                 <input type="text" id="department" name="department" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="year">Year of Study *</label>
+                                <label for="year" class="required">Year of Study *</label>
                                 <select id="year" name="year" required>
                                     <option value="">Select Year</option>
                                     <option value="1">1st Year</option>
@@ -91,7 +91,7 @@
                         </div>
                         
                         <div class="form-group file-upload">
-                            <label for="idCard">Upload Aadhaar/ID Card (PDF, max 2MB) *</label>
+                            <label for="idCard" class="required">Upload Aadhaar/ID Card (PDF, max 2MB) *</label>
                             <div class="file-input-wrapper">
                                 <input type="file" id="idCard" name="idCard" accept=".pdf" required>
                                 <div class="file-input-display">
@@ -110,17 +110,17 @@
                         
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="munsParticipated">MUNs Participated *</label>
+                                <label for="munsParticipated" class="required">MUNs Participated *</label>
                                 <input type="number" id="munsParticipated" name="munsParticipated" min="0" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="munsWithAwards">MUNs with Awards *</label>
+                                <label for="munsWithAwards" class="required">MUNs with Awards *</label>
                                 <input type="number" id="munsWithAwards" name="munsWithAwards" min="0" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="organizingExperience">Organizing Team Member Before? *</label>
+                                <label for="organizingExperience" class="required">Organizing Team Member Before? *</label>
                                 <select id="organizingExperience" name="organizingExperience" required>
                                     <option value="">Select Option</option>
                                     <option value="yes">Yes</option>
@@ -129,7 +129,7 @@
                             </div>
                             
                             <div class="form-group">
-                                <label for="munsChaired">MUNs Chaired *</label>
+                                <label for="munsChaired" class="required">MUNs Chaired *</label>
                                 <input type="number" id="munsChaired" name="munsChaired" min="0" required>
                             </div>
                         </div>
@@ -164,8 +164,8 @@
                         </div>
                         
                         <div class="form-group">
-                            <label>Committee Preferences *</label>
-                            <div class="checkbox-group">
+                            <label class="required">Committee Preferences *</label>
+                            <div class="checkbox-group vertical">
                                 <label class="checkbox-item">
                                     <input type="checkbox" name="committees" value="UNSC">
                                     <span class="checkmark"></span>
@@ -200,8 +200,8 @@
                         </div>
                         
                         <div class="form-group">
-                            <label>Preferred EB Positions *</label>
-                            <div class="checkbox-group">
+                            <label class="required">Preferred EB Positions *</label>
+                            <div class="checkbox-group vertical">
                                 <label class="checkbox-item">
                                     <input type="checkbox" name="positions" value="Chairperson">
                                     <span class="checkmark"></span>
