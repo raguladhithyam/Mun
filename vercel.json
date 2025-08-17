@@ -21,12 +21,8 @@
     },
 
     {
-      "src": "/api/admin/stats",
-      "dest": "/api/admin/stats.js"
-    },
-    {
-      "src": "/api/admin/registrations",
-      "dest": "/api/admin/registrations.js"
+      "src": "/api/admin/registrations-data",
+      "dest": "/api/admin/registrations-data.js"
     },
     {
       "src": "/api/admin/templates",
@@ -39,6 +35,10 @@
     {
       "src": "/api/admin/verify-access-key",
       "dest": "/api/admin/verify-access-key.js"
+    },
+    {
+      "src": "/api/admin/(.*)",
+      "dest": "/api/index.js"
     },
     {
       "src": "/form",

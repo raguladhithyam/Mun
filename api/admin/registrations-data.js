@@ -1,4 +1,4 @@
-const { getCollection, COLLECTIONS } = require('../utils/firebase');
+const { getRegistrationStats, getCollection, COLLECTIONS } = require('../utils/firebase');
 
 module.exports = async (req, res) => {
   // Enable CORS
@@ -21,6 +21,20 @@ module.exports = async (req, res) => {
   }
 
   try {
+    const { type } = req.query;
+
+    // Handle stats request
+    if (type === 'stats') {
+      console.log('📊 Getting registration statistics');
+      const stats = await getRegistrationStats();
+      
+      return res.status(200).json({
+        success: true,
+        data: stats
+      });
+    }
+
+    // Handle registrations request (default behavior)
     const { 
       page = 1, 
       limit = 50, 
@@ -88,10 +102,10 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get registrations error:', error);
+    console.error('Registrations data error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch registrations',
+      message: 'Failed to fetch data',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }

@@ -411,13 +411,13 @@ async function loadDashboardData() {
     
     try {
         // Load statistics
-        const statsResponse = await axios.get('/api/admin/stats');
+        const statsResponse = await axios.get('/api/admin/registrations-data?type=stats');
         if (statsResponse.data.success) {
             updateStatistics(statsResponse.data.data);
         }
         
         // Load registrations
-        const registrationsResponse = await axios.get('/api/admin/registrations');
+        const registrationsResponse = await axios.get('/api/admin/registrations-data');
         if (registrationsResponse.data.success) {
             currentRegistrations = registrationsResponse.data.data;
             updateRegistrationsTable(currentRegistrations);

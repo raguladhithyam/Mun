@@ -130,8 +130,8 @@ The `vercel.json` file is configured to:
 - `POST /api/submit/check-email` - Check if email already exists
 
 ### Admin Dashboard
-- `GET /api/admin/stats` - Get dashboard statistics
-- `GET /api/admin/registrations` - Get all registrations
+- `GET /api/admin/registrations-data?type=stats` - Get dashboard statistics
+- `GET /api/admin/registrations-data` - Get all registrations
 - `GET /api/admin/registrations/:id` - Get single registration
 - `PUT /api/admin/registrations/:id` - Update registration
 - `DELETE /api/admin/registrations/:id` - Delete registration
