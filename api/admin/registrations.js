@@ -1,4 +1,4 @@
-const { getCollection, getDocument, deleteDocument, COLLECTIONS } = require('../utils/firebase');
+const { getCollection, getDocument, deleteDocument, updateDocument, COLLECTIONS } = require('../utils/firebase');
 
 module.exports = async (req, res) => {
   // Enable CORS
@@ -73,6 +73,117 @@ module.exports = async (req, res) => {
       res.status(500).json({
         success: false,
         message: 'Failed to delete registration',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
+    }
+    return;
+  }
+
+  // Handle PUT requests for registration updates
+  if (req.method === 'PUT') {
+    try {
+      // Extract ID from URL path - handle Vercel routing
+      let id;
+      
+      // For Vercel routing, the ID is captured in the route pattern
+      const urlParts = req.url.split('/');
+      id = urlParts[urlParts.length - 1];
+      
+      // If the last part is empty or doesn't look like an ID, try the second to last
+      if (!id || id === '' || id === 'registrations') {
+        id = urlParts[urlParts.length - 2];
+      }
+      
+      // Additional fallback: try to extract from the full URL
+      if (!id || id === 'registrations') {
+        const fullUrl = req.url;
+        const match = fullUrl.match(/([a-zA-Z0-9]{20,})/);
+        if (match) {
+          id = match[1];
+        }
+      }
+      
+      console.log('[Registrations] PUT request debug:', {
+        url: req.url,
+        urlParts: urlParts,
+        extractedId: id,
+        body: req.body
+      });
+      
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Registration ID is required'
+        });
+      }
+
+      // Check if registration exists
+      const existingRegistration = await getDocument(COLLECTIONS.REGISTRATIONS, id);
+      
+      if (!existingRegistration) {
+        return res.status(404).json({
+          success: false,
+          message: 'Registration not found'
+        });
+      }
+
+      // Validate required fields
+      const requiredFields = ['name', 'email', 'phone', 'college', 'department', 'year'];
+      for (const field of requiredFields) {
+        if (!req.body[field] || req.body[field].toString().trim() === '') {
+          return res.status(400).json({
+            success: false,
+            message: `${field} is required`
+          });
+        }
+      }
+
+      // Validate committees and positions
+      if (!req.body.committees || req.body.committees.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one committee is required'
+        });
+      }
+
+      if (!req.body.positions || req.body.positions.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one position is required'
+        });
+      }
+
+      // Prepare update data
+      const updateData = {
+        name: req.body.name.trim(),
+        email: req.body.email.trim().toLowerCase(),
+        phone: req.body.phone.trim(),
+        college: req.body.college.trim(),
+        department: req.body.department.trim(),
+        year: parseInt(req.body.year),
+        committees: req.body.committees,
+        positions: req.body.positions,
+        munsParticipated: parseInt(req.body.munsParticipated) || 0,
+        munsWithAwards: parseInt(req.body.munsWithAwards) || 0,
+        munsChaired: parseInt(req.body.munsChaired) || 0,
+        experience: req.body.experience || '',
+        achievements: req.body.achievements || '',
+        status: req.body.status || existingRegistration.status || 'pending'
+      };
+
+      // Update registration in database
+      await updateDocument(COLLECTIONS.REGISTRATIONS, id, updateData);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Registration updated successfully'
+      });
+
+    } catch (error) {
+      console.error('Update registration error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update registration',
         error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
       });
     }
