@@ -228,6 +228,13 @@ router.put('/registrations/:id', authenticateAdmin, async (req, res) => {
 
 // Delete registration
 router.delete('/registrations/:id', authenticateAdmin, async (req, res) => {
+  console.log('[AdminRoutes] DELETE registration request:', {
+    method: req.method,
+    url: req.url,
+    params: req.params,
+    id: req.params.id
+  });
+  
   try {
     const { id } = req.params;
 
