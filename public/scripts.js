@@ -1459,11 +1459,9 @@ function editRegistration(id) {
 }
 
 async function deleteRegistration(id) {
-    console.log('Delete function called with ID:', id);
     try {
         // Find the registration
         const registration = currentRegistrations.find(reg => reg.id === id);
-        console.log('Found registration:', registration);
         if (!registration) {
             showError('Registration not found');
             return;
@@ -1489,9 +1487,7 @@ async function deleteRegistration(id) {
 
         // Proceed with deletion
         showLoading();
-        console.log('Making DELETE request to:', `/api/admin/registrations/${id}`);
         const deleteResponse = await axios.delete(`/api/admin/registrations/${id}`);
-        console.log('Delete response:', deleteResponse);
         
         if (deleteResponse.data.success) {
             // Remove from local data

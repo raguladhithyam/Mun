@@ -29,6 +29,10 @@
       "dest": "/api/admin/registrations.js"
     },
     {
+      "src": "/api/admin/registrations/(.*)",
+      "dest": "/api/admin/registrations/[id].js"
+    },
+    {
       "src": "/api/admin/templates",
       "dest": "/api/admin/templates.js"
     },
