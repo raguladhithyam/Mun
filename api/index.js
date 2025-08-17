@@ -54,7 +54,11 @@ app.use('/admin', mailerRoutes);
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
-  console.log(`[API] ${req.method} ${req.url}`);
+  console.log(`[API] ${req.method} ${req.url}`, {
+    originalUrl: req.originalUrl,
+    path: req.path,
+    params: req.params
+  });
   next();
 });
 

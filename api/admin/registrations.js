@@ -15,9 +15,33 @@ module.exports = async (req, res) => {
   // Handle DELETE requests for registration deletion
   if (req.method === 'DELETE') {
     try {
-      // Extract ID from URL path
+      // Extract ID from URL path - handle Vercel routing
+      let id;
+      
+      // For Vercel routing, the ID is captured in the route pattern
+      // The URL might be like "/ZFPfpfYmRHYATEkl8dsn" when routed
       const urlParts = req.url.split('/');
-      const id = urlParts[urlParts.length - 1];
+      id = urlParts[urlParts.length - 1];
+      
+      // If the last part is empty or doesn't look like an ID, try the second to last
+      if (!id || id === '' || id === 'registrations') {
+        id = urlParts[urlParts.length - 2];
+      }
+      
+      // Additional fallback: try to extract from the full URL
+      if (!id || id === 'registrations') {
+        const fullUrl = req.url;
+        const match = fullUrl.match(/([a-zA-Z0-9]{20,})/);
+        if (match) {
+          id = match[1];
+        }
+      }
+      
+      console.log('[Registrations] DELETE request debug:', {
+        url: req.url,
+        urlParts: urlParts,
+        extractedId: id
+      });
       
       if (!id) {
         return res.status(400).json({

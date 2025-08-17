@@ -231,8 +231,10 @@ router.delete('/registrations/:id', authenticateAdmin, async (req, res) => {
   console.log('[AdminRoutes] DELETE registration request:', {
     method: req.method,
     url: req.url,
+    originalUrl: req.originalUrl,
     params: req.params,
-    id: req.params.id
+    id: req.params.id,
+    path: req.path
   });
   
   try {
@@ -444,5 +446,20 @@ function convertToCSV(data) {
   
   return [csvHeaders, ...csvRows].join('\n');
 }
+
+// Debug route to catch all admin requests
+router.use('*', (req, res) => {
+  console.log('[AdminRoutes] Unhandled request:', {
+    method: req.method,
+    url: req.url,
+    originalUrl: req.originalUrl,
+    path: req.path,
+    params: req.params
+  });
+  res.status(404).json({
+    success: false,
+    message: 'Admin route not found'
+  });
+});
 
 module.exports = router;
