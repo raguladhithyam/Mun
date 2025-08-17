@@ -130,6 +130,9 @@ router.put('/registrations/:id', authenticateAdmin, async (req, res) => {
 
 // Delete registration
 router.delete('/registrations/:id', authenticateAdmin, async (req, res) => {
+  console.log(`🗑️ DELETE registration request for ID: ${req.params.id}`);
+  console.log(`🔍 Request URL: ${req.url}`);
+  console.log(`📍 Request path: ${req.path}`);
   try {
     const { id } = req.params;
 
