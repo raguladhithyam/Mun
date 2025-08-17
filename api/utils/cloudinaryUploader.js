@@ -28,7 +28,9 @@ async function uploadToCloudinary(fileBuffer, fileName, contentType) {
       resource_type: 'auto',
       folder: 'pdf_form_uploads',
       use_filename: true,
-      unique_filename: true
+      unique_filename: true,
+      access_mode: 'public',
+      type: 'upload'
     });
 
     console.log(`File uploaded successfully: ${fileName}`);
@@ -92,8 +94,35 @@ function getPublicIdFromUrl(url) {
   }
 }
 
+// Generate signed URL for secure file access
+function generateSignedUrl(publicId, resourceType = 'raw') {
+  try {
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const signature = cloudinary.utils.api_sign_request(
+      { 
+        public_id: publicId, 
+        resource_type: resourceType,
+        timestamp: timestamp 
+      }, 
+      process.env.VITE_CLOUDINARY_API_SECRET
+    );
+
+    return cloudinary.url(publicId, {
+      resource_type: resourceType,
+      sign_url: true,
+      type: 'upload',
+      version: timestamp,
+      signature: signature
+    });
+  } catch (error) {
+    console.error('Error generating signed URL:', error);
+    return null;
+  }
+}
+
 module.exports = {
   uploadToCloudinary,
   deleteFromCloudinary,
-  getPublicIdFromUrl
+  getPublicIdFromUrl,
+  generateSignedUrl
 }; 

@@ -1248,7 +1248,7 @@ function generateRegistrationDetailsHTML(registration) {
                                 <i class="${file.icon}"></i>
                                 <h5>${file.name}</h5>
                             </div>
-                            <a href="${file.url}" target="_blank" class="file-link-url">
+                            <a href="/api/admin/file/${encodeURIComponent(file.url)}" target="_blank" class="file-link-url">
                                 ${file.url}
                             </a>
                         </div>
