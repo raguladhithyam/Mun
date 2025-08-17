@@ -1,4 +1,4 @@
-const { getCollection, deleteDocument, COLLECTIONS } = require('../utils/firebase');
+const { getCollection, getDocument, deleteDocument, COLLECTIONS } = require('../utils/firebase');
 
 module.exports = async (req, res) => {
   // Enable CORS
@@ -15,7 +15,9 @@ module.exports = async (req, res) => {
   // Handle DELETE requests for registration deletion
   if (req.method === 'DELETE') {
     try {
-      const { id } = req.query;
+      // Extract ID from URL path
+      const urlParts = req.url.split('/');
+      const id = urlParts[urlParts.length - 1];
       
       if (!id) {
         return res.status(400).json({
@@ -24,7 +26,17 @@ module.exports = async (req, res) => {
         });
       }
 
-      // Delete the registration from the database
+      // Get registration to access file URLs
+      const registration = await getDocument(COLLECTIONS.REGISTRATIONS, id);
+      
+      if (!registration) {
+        return res.status(404).json({
+          success: false,
+          message: 'Registration not found'
+        });
+      }
+
+      // Delete registration from database
       await deleteDocument(COLLECTIONS.REGISTRATIONS, id);
       
       res.status(200).json({
