@@ -21,36 +21,8 @@
     },
 
     {
-      "src": "/api/admin/stats",
-      "dest": "/api/admin.js"
-    },
-    {
-      "src": "/api/admin/registrations",
-      "dest": "/api/admin.js"
-    },
-    {
-      "src": "/api/admin/templates",
-      "dest": "/api/admin.js"
-    },
-    {
-      "src": "/api/admin/send-mail",
-      "dest": "/api/admin.js"
-    },
-    {
-      "src": "/api/admin/verify-access-key",
-      "dest": "/api/admin.js"
-    },
-    {
-      "src": "/api/admin/export",
-      "dest": "/api/admin.js"
-    },
-    {
-      "src": "/api/admin/registrations/(.*)",
-      "dest": "/api/admin.js"
-    },
-    {
-      "src": "/api/admin",
-      "dest": "/api/admin.js"
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
     },
     {
       "src": "/form",

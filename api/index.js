@@ -45,6 +45,33 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`Main API - ${req.method} ${req.url}`, {
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    path: req.path
+  });
+  next();
+});
+
+// Root route handler for debugging
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Main API is running',
+    availableEndpoints: [
+      'POST /submit',
+      'GET /admin/stats',
+      'GET /admin/registrations',
+      'GET /admin/templates',
+      'POST /admin/send-mail',
+      'POST /admin/verify-access-key',
+      'GET /admin/export'
+    ]
+  });
+});
+
 // API routes - Fixed to match frontend expectations
 // Frontend makes requests to /api/submit and /api/admin/send-mail
 // Since this is the /api handler, we mount routes at /submit and /admin
