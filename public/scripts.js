@@ -937,41 +937,6 @@ async function saveRegistration() {
             return;
         }
         
-        // Prompt for secure access key
-        const { value: accessKey } = await Swal.fire({
-            title: 'Secure Access Required',
-            text: 'Please enter the secure access key to save changes.',
-            input: 'password',
-            inputLabel: 'Secure Access Key',
-            inputPlaceholder: 'Enter secure access key',
-            inputValidator: (value) => {
-                if (!value) {
-                    return 'Please enter the secure access key';
-                }
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Verify & Save',
-            cancelButtonText: 'Cancel',
-            showLoaderOnConfirm: true,
-            preConfirm: async (accessKey) => {
-                try {
-                    const verifyResponse = await axios.post('/api/admin/verify-access-key', { accessKey });
-                    if (!verifyResponse.data.success) {
-                        throw new Error(verifyResponse.data.message || 'Invalid access key');
-                    }
-                    return accessKey;
-                } catch (error) {
-                    Swal.showValidationMessage(error.response?.data?.message || 'Access key verification failed');
-                    return false;
-                }
-            },
-            allowOutsideClick: () => !Swal.isLoading()
-        });
-
-        if (!accessKey) {
-            return;
-        }
-        
         showLoading();
         
         // Update registration in database
@@ -1494,9 +1459,11 @@ function editRegistration(id) {
 }
 
 async function deleteRegistration(id) {
+    console.log('Delete function called with ID:', id);
     try {
         // Find the registration
         const registration = currentRegistrations.find(reg => reg.id === id);
+        console.log('Found registration:', registration);
         if (!registration) {
             showError('Registration not found');
             return;
@@ -1518,44 +1485,13 @@ async function deleteRegistration(id) {
             return;
         }
 
-        // Prompt for secure access key
-        const { value: accessKey } = await Swal.fire({
-            title: 'Secure Access Required',
-            text: 'Please enter the secure access key to confirm deletion.',
-            input: 'password',
-            inputLabel: 'Secure Access Key',
-            inputPlaceholder: 'Enter secure access key',
-            inputValidator: (value) => {
-                if (!value) {
-                    return 'Please enter the secure access key';
-                }
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Verify & Delete',
-            cancelButtonText: 'Cancel',
-            showLoaderOnConfirm: true,
-            preConfirm: async (accessKey) => {
-                try {
-                    const verifyResponse = await axios.post('/api/admin/verify-access-key', { accessKey });
-                    if (!verifyResponse.data.success) {
-                        throw new Error(verifyResponse.data.message || 'Invalid access key');
-                    }
-                    return accessKey;
-                } catch (error) {
-                    Swal.showValidationMessage(error.response?.data?.message || 'Access key verification failed');
-                    return false;
-                }
-            },
-            allowOutsideClick: () => !Swal.isLoading()
-        });
 
-        if (!accessKey) {
-            return;
-        }
 
         // Proceed with deletion
         showLoading();
+        console.log('Making DELETE request to:', `/api/admin/registrations/${id}`);
         const deleteResponse = await axios.delete(`/api/admin/registrations/${id}`);
+        console.log('Delete response:', deleteResponse);
         
         if (deleteResponse.data.success) {
             // Remove from local data

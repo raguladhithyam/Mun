@@ -37,10 +37,6 @@
       "dest": "/api/admin/send-mail.js"
     },
     {
-      "src": "/api/admin/verify-access-key",
-      "dest": "/api/admin/verify-access-key.js"
-    },
-    {
       "src": "/form",
       "dest": "/public/form.html"
     },
