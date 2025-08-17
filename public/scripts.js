@@ -1487,7 +1487,7 @@ async function deleteRegistration(id) {
 
         // Proceed with deletion
         showLoading();
-        const deleteResponse = await axios.delete(`/api/admin/registrations/${id}`);
+        const deleteResponse = await axios.delete(`/registrations/${id}`);
         
         if (deleteResponse.data.success) {
             // Remove from local data
