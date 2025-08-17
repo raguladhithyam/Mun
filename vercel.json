@@ -16,6 +16,7 @@
       "dest": "/api/submit.js"
     },
     {
+      "src": "/api/form",
       "dest": "/api/routes/formRoutes.js"
     },
     {
