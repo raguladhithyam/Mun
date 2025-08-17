@@ -315,19 +315,22 @@ body {
 .checkbox-item {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--border);
+    gap: 1.25rem;
+    padding: 1.25rem;
+    border: 2px solid var(--border);
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: var(--transition);
     background: var(--background);
-    min-height: 60px;
+    min-height: 70px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .checkbox-item:hover {
     border-color: var(--accent-1);
     background: rgba(121, 125, 250, 0.05);
+    box-shadow: 0 4px 12px rgba(121, 125, 250, 0.15);
+    transform: translateY(-1px);
 }
 
 .checkbox-item input[type="checkbox"] {
@@ -335,18 +338,31 @@ body {
 }
 
 .checkmark {
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--border);
-    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border);
+    border-radius: 6px;
     position: relative;
     transition: var(--transition);
     flex-shrink: 0;
+    background: white;
 }
 
 .checkbox-item input[type="checkbox"]:checked + .checkmark {
     background: var(--accent-1);
     border-color: var(--accent-1);
+    box-shadow: 0 2px 8px rgba(121, 125, 250, 0.3);
+}
+
+.checkbox-item input[type="checkbox"]:checked ~ span {
+    color: var(--accent-1);
+    font-weight: 600;
+}
+
+.checkbox-item:has(input[type="checkbox"]:checked) {
+    border-color: var(--accent-1);
+    background: rgba(121, 125, 250, 0.08);
+    box-shadow: 0 4px 12px rgba(121, 125, 250, 0.2);
 }
 
 .checkbox-item input[type="checkbox"]:checked + .checkmark::after {
@@ -356,8 +372,9 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     color: white;
-    font-size: 12px;
+    font-size: 16px;
     font-weight: bold;
+    line-height: 1;
 }
 
 /* Form Actions */
