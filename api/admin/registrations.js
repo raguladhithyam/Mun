@@ -13,27 +13,40 @@ module.exports = async (req, res) => {
     return;
   }
 
+  // Debug: Log the request details
+  console.log('📋 Registrations endpoint called:', req.method, req.url);
+  
   // Extract registration ID from URL if present
   // For Vercel serverless functions with regex routing, the ID might be in the URL
   let registrationId = null;
   
   // Check if there's an ID in the URL path
-  if (req.url && req.url !== '/') {
+  // Only treat as ID if the URL is not empty and not just '/'
+  if (req.url && req.url !== '/' && req.url !== '') {
     const urlParts = req.url.split('/').filter(part => part.length > 0);
+    console.log('📋 URL parts:', urlParts);
     
-    // If there are URL parts, the first one should be the ID
+    // Only treat as ID if there are actual URL parts and it looks like an ID
     if (urlParts.length > 0) {
-      registrationId = urlParts[0];
+      const potentialId = urlParts[0];
+      // Check if it looks like a Firebase document ID (alphanumeric, at least 10 chars)
+      if (potentialId && potentialId.length >= 10 && /^[a-zA-Z0-9]+$/.test(potentialId)) {
+        registrationId = potentialId;
+      }
     }
   }
+  
+  console.log('📋 Registration ID:', registrationId);
 
   // Handle individual registration operations (GET, PUT, DELETE by ID)
   if (registrationId) {
+    console.log('📋 Handling individual registration:', registrationId);
     return handleIndividualRegistration(req, res, registrationId);
   }
 
   // Handle collection operations (GET all registrations)
   if (req.method === 'GET') {
+    console.log('📋 Handling GET all registrations');
     return handleGetAllRegistrations(req, res);
   }
 
@@ -203,6 +216,7 @@ async function handleDeleteRegistration(req, res, registrationId) {
 
 // Handle get all registrations (existing functionality)
 async function handleGetAllRegistrations(req, res) {
+  console.log('📋 handleGetAllRegistrations called');
   try {
     const { 
       page = 1, 
