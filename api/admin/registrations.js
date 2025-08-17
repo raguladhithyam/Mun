@@ -1,4 +1,4 @@
-const { getCollection, COLLECTIONS } = require('../utils/firebase');
+const { getCollection, deleteDocument, COLLECTIONS } = require('../utils/firebase');
 
 module.exports = async (req, res) => {
   // Enable CORS
@@ -12,7 +12,38 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Only allow GET requests
+  // Handle DELETE requests for registration deletion
+  if (req.method === 'DELETE') {
+    try {
+      const { id } = req.query;
+      
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Registration ID is required'
+        });
+      }
+
+      // Delete the registration from the database
+      await deleteDocument(COLLECTIONS.REGISTRATIONS, id);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Registration deleted successfully'
+      });
+
+    } catch (error) {
+      console.error('Delete registration error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete registration',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
+    }
+    return;
+  }
+
+  // Only allow GET requests for fetching registrations
   if (req.method !== 'GET') {
     return res.status(405).json({
       success: false,
