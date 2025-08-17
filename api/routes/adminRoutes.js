@@ -430,44 +430,6 @@ function convertToCSV(data) {
   return [csvHeaders, ...csvRows].join('\n');
 }
 
-// Verify secure access key
-function verifySecureAccessKey(accessKey) {
-  return accessKey === SECURE_ACCESS_KEY;
-}
 
-// Verify secure access key endpoint
-router.post('/verify-access-key', authenticateAdmin, async (req, res) => {
-  try {
-    const { accessKey } = req.body;
-    
-    if (!accessKey) {
-      return res.status(400).json({
-        success: false,
-        message: 'Secure access key is required'
-      });
-    }
-    
-    const isValid = verifySecureAccessKey(accessKey);
-    
-    if (!isValid) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid secure access key'
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: 'Secure access key verified successfully'
-    });
-    
-  } catch (error) {
-    console.error('Verify access key error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to verify secure access key'
-    });
-  }
-});
 
 module.exports = router;
