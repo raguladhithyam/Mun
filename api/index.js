@@ -49,8 +49,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Frontend makes requests to /api/submit and /api/admin/send-mail
 // Since this is the /api handler, we mount routes at /submit and /admin
 app.use('/submit', formRoutes);
-app.use('/admin', adminRoutes);
-app.use('/admin', mailerRoutes);
+app.use('/', adminRoutes);
+app.use('/', mailerRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
