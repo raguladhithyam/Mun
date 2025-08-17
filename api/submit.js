@@ -145,7 +145,9 @@ module.exports = async (req, res) => {
         // Upload ID Card
         if (req.files.idCard) {
           const idCardFile = req.files.idCard[0];
-          const fileName = `${Date.now()}_id-card_${idCardFile.originalname}`;
+          // Remove file extension from originalname to prevent double extensions
+          const originalNameWithoutExt = idCardFile.originalname.replace(/\.pdf$/i, '');
+          const fileName = `${Date.now()}_id-card_${originalNameWithoutExt}`;
           console.log('Uploading ID card:', fileName);
           uploadPromises.push(
             uploadToCloudinary(idCardFile.buffer, fileName, idCardFile.mimetype)
@@ -163,7 +165,9 @@ module.exports = async (req, res) => {
         // Upload MUN Certificates (optional)
         if (req.files.munCertificates) {
           const certFile = req.files.munCertificates[0];
-          const fileName = `${Date.now()}_certificates_${certFile.originalname}`;
+          // Remove file extension from originalname to prevent double extensions
+          const originalNameWithoutExt = certFile.originalname.replace(/\.pdf$/i, '');
+          const fileName = `${Date.now()}_certificates_${originalNameWithoutExt}`;
           console.log('Uploading MUN certificates:', fileName);
           uploadPromises.push(
             uploadToCloudinary(certFile.buffer, fileName, certFile.mimetype)
@@ -181,7 +185,9 @@ module.exports = async (req, res) => {
         // Upload Chairing Resume (optional)
         if (req.files.chairingResume) {
           const resumeFile = req.files.chairingResume[0];
-          const fileName = `${Date.now()}_resume_${resumeFile.originalname}`;
+          // Remove file extension from originalname to prevent double extensions
+          const originalNameWithoutExt = resumeFile.originalname.replace(/\.pdf$/i, '');
+          const fileName = `${Date.now()}_resume_${originalNameWithoutExt}`;
           console.log('Uploading chairing resume:', fileName);
           uploadPromises.push(
             uploadToCloudinary(resumeFile.buffer, fileName, resumeFile.mimetype)
