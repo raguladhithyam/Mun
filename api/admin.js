@@ -76,6 +76,36 @@ function verifySecureAccessKey(accessKey) {
   return accessKey === SECURE_ACCESS_KEY;
 }
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`Admin API - ${req.method} ${req.url}`, {
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    path: req.path
+  });
+  next();
+});
+
+// Root route handler
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Admin API is running',
+    availableEndpoints: [
+      'GET /stats',
+      'GET /registrations',
+      'GET /registrations/:id',
+      'PUT /registrations/:id',
+      'DELETE /registrations/:id',
+      'POST /registrations/bulk-action',
+      'GET /export',
+      'GET /templates',
+      'POST /send-mail',
+      'POST /verify-access-key'
+    ]
+  });
+});
+
 // Route handlers based on path
 app.post('/verify-access-key', authenticateAdmin, async (req, res) => {
   try {
