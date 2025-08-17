@@ -1,0 +1,1593 @@
+// Global variables
+let currentRegistrations = [];
+let dashboardLoaded = false;
+
+// Check if Axios is available, if not, create a simple fallback
+if (typeof axios === 'undefined') {
+    console.warn('Axios not loaded, using fallback HTTP client');
+    window.axios = {
+        post: async (url, data, config) => {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: data,
+                    headers: config?.headers || {}
+                });
+                const result = await response.json();
+                return { data: result };
+            } catch (error) {
+                throw { response: { data: { message: error.message } } };
+            }
+        },
+        get: async (url) => {
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                return { data: result };
+            } catch (error) {
+                throw { response: { data: { message: error.message } } };
+            }
+        }
+    };
+}
+
+// DOM Elements - with null checks for different pages
+const elements = {
+    form: document.getElementById('ebForm'),
+    backToForm: document.getElementById('backToForm'),
+    applicationForm: document.getElementById('applicationForm'),
+    adminDashboard: document.getElementById('adminDashboard'),
+    loadingOverlay: document.getElementById('loadingOverlay'),
+    successModal: document.getElementById('successModal'),
+    closeModal: document.getElementById('closeModal'),
+    fileLinksModal: document.getElementById('fileLinksModal'),
+    closeFileLinksModal: document.getElementById('closeFileLinksModal'),
+    registrationDetailsContent: document.getElementById('registrationDetailsContent'),
+    registrationEditContent: document.getElementById('registrationEditContent'),
+    modalTitle: document.getElementById('modalTitle'),
+    editBtn: document.getElementById('editBtn'),
+    saveBtn: document.getElementById('saveBtn'),
+    cancelBtn: document.getElementById('cancelBtn'),
+    tabBtns: document.querySelectorAll('.tab-btn'),
+    tabContents: document.querySelectorAll('.tab-content'),
+    submitBtn: document.getElementById('submitBtn'),
+    exportBtn: document.getElementById('exportBtn'),
+    mailerForm: document.getElementById('mailerForm'),
+    searchInput: document.getElementById('searchInput'),
+    committeeFilter: document.getElementById('committeeFilter'),
+    positionFilter: document.getElementById('positionFilter'),
+    previewBtn: document.getElementById('previewBtn')
+};
+
+// Initialize application
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Application initializing...');
+    console.log('Axios available:', typeof axios !== 'undefined');
+    
+    // Prevent multiple initializations
+    if (window.appInitialized) {
+        console.log('Application already initialized, skipping...');
+        return;
+    }
+    window.appInitialized = true;
+    
+    initializeEventListeners();
+    initializeFileUploads();
+    initializePage();
+});
+
+// Handle routing based on URL
+function handleRouting() {
+    const path = window.location.pathname;
+    console.log('Routing to path:', path);
+    
+    if (path === '/admin') {
+        // Admin page - load dashboard data
+        if (elements.adminDashboard && !dashboardLoaded) {
+            console.log('Loading dashboard data from routing...');
+            loadDashboardData();
+        }
+    } else if (path === '/form') {
+        // Form page - no special handling needed
+        console.log('Application form page loaded');
+    } else {
+        // Landing page - no special handling needed
+        console.log('Landing page loaded');
+    }
+}
+
+// Event Listeners
+function initializeEventListeners() {
+    // Form submission
+    if (elements.form) {
+        elements.form.addEventListener('submit', handleFormSubmission);
+        console.log('Form submission listener added');
+    }
+    
+    // Navigation - only add if element exists (for admin page)
+    if (elements.backToForm) {
+        elements.backToForm.addEventListener('click', () => {
+            window.location.href = '/form';
+        });
+    }
+    
+    // Modal
+    if (elements.closeModal) {
+        elements.closeModal.addEventListener('click', hideSuccessModal);
+    }
+    
+    // File Links Modal
+    if (elements.closeFileLinksModal) {
+        elements.closeFileLinksModal.addEventListener('click', hideFileLinksModal);
+    }
+    if (elements.editBtn) {
+        elements.editBtn.addEventListener('click', startEditMode);
+    }
+    if (elements.saveBtn) {
+        elements.saveBtn.addEventListener('click', saveRegistration);
+    }
+    if (elements.cancelBtn) {
+        elements.cancelBtn.addEventListener('click', cancelEditMode);
+    }
+    
+    // Close modal when clicking outside
+    if (elements.fileLinksModal) {
+        elements.fileLinksModal.addEventListener('click', (e) => {
+            if (e.target === elements.fileLinksModal) {
+                hideFileLinksModal();
+            }
+        });
+    }
+    
+    // Email Preview Modal
+    const closeEmailPreview = document.getElementById('closeEmailPreview');
+    const closePreviewModal = document.getElementById('closePreviewModal');
+    const sendFromPreview = document.getElementById('sendFromPreview');
+    
+    if (closeEmailPreview) {
+        closeEmailPreview.addEventListener('click', hideEmailPreviewModal);
+    }
+    if (closePreviewModal) {
+        closePreviewModal.addEventListener('click', hideEmailPreviewModal);
+    }
+    if (sendFromPreview) {
+        sendFromPreview.addEventListener('click', sendEmailFromPreview);
+    }
+    
+    // Dashboard tabs - only add if elements exist (for admin page)
+    if (elements.tabBtns.length > 0) {
+        elements.tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+    }
+    
+    // Export functionality - only add if element exists (for admin page)
+    if (elements.exportBtn) {
+        elements.exportBtn.addEventListener('click', exportToExcel);
+    }
+    
+    // Mailer form - only add if element exists (for admin page)
+    if (elements.mailerForm) {
+        elements.mailerForm.addEventListener('submit', handleMailerSubmission);
+        
+        // Add mailer tab functionality
+        const mailerTabBtns = document.querySelectorAll('.mailer-tab-btn');
+        mailerTabBtns.forEach(btn => {
+            btn.addEventListener('click', handleMailerTabChange);
+        });
+    }
+    
+    // Search functionality - only add if element exists (for admin page)
+    if (elements.searchInput) {
+        elements.searchInput.addEventListener('input', handleSearch);
+    }
+    
+    // Filter functionality - only add if elements exist (for admin page)
+    if (elements.committeeFilter) {
+        elements.committeeFilter.addEventListener('change', handleFilter);
+    }
+    if (elements.positionFilter) {
+        elements.positionFilter.addEventListener('change', handleFilter);
+    }
+    
+    // Preview functionality - only add if element exists (for admin page)
+    if (elements.previewBtn) {
+        elements.previewBtn.addEventListener('click', handlePreview);
+    }
+    
+    // Table action buttons event delegation
+    const registrationsTable = document.getElementById('registrationsTable');
+    if (registrationsTable) {
+        registrationsTable.addEventListener('click', handleTableAction);
+    }
+    
+    // File validation - only add if file inputs exist (for form page)
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    if (fileInputs.length > 0) {
+        fileInputs.forEach(input => {
+            input.addEventListener('change', validateFile);
+        });
+    }
+    
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', handleRouting);
+    
+    // Handle keyboard events for modals
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (elements.fileLinksModal && elements.fileLinksModal.style.display === 'flex') {
+                hideFileLinksModal();
+            }
+            if (elements.successModal && elements.successModal.style.display === 'flex') {
+                hideSuccessModal();
+            }
+        }
+    });
+}
+
+// File upload initialization
+function initializeFileUploads() {
+    const fileWrappers = document.querySelectorAll('.file-input-wrapper');
+    if (fileWrappers.length === 0) {
+        console.log('No file upload elements found on this page');
+        return;
+    }
+    
+    fileWrappers.forEach(wrapper => {
+        const input = wrapper.querySelector('input[type="file"]');
+        const display = wrapper.querySelector('.file-input-display span');
+        
+        if (!input || !display) {
+            console.warn('File upload wrapper missing required elements');
+            return;
+        }
+        
+        // Drag and drop functionality
+        wrapper.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            wrapper.style.borderColor = 'var(--accent-1)';
+            wrapper.style.background = 'rgba(121, 125, 250, 0.1)';
+        });
+        
+        wrapper.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            wrapper.style.borderColor = 'var(--border)';
+            wrapper.style.background = 'transparent';
+        });
+        
+        wrapper.addEventListener('drop', (e) => {
+            e.preventDefault();
+            wrapper.style.borderColor = 'var(--border)';
+            wrapper.style.background = 'transparent';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                input.files = files;
+                updateFileDisplay(input, display);
+                validateFile({ target: input });
+            }
+        });
+        
+        input.addEventListener('change', () => {
+            updateFileDisplay(input, display);
+        });
+    });
+}
+
+// Update file display
+function updateFileDisplay(input, display) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        display.textContent = file.name;
+        display.style.color = 'var(--primary)';
+        display.style.fontWeight = '500';
+    } else {
+        display.textContent = input.required ? 'Choose file or drag here' : 'Choose file or drag here (Optional)';
+        display.style.color = 'var(--text-light)';
+        display.style.fontWeight = 'normal';
+    }
+}
+
+// File validation
+function validateFile(event) {
+    const input = event.target;
+    const file = input.files[0];
+    
+    if (!file) return;
+    
+    // Check file type
+    if (file.type !== 'application/pdf') {
+        showError('Only PDF files are allowed.');
+        input.value = '';
+        updateFileDisplay(input, input.parentElement.querySelector('.file-input-display span'));
+        return;
+    }
+    
+    // Check file size
+    const maxSize = input.id === 'chairingResume' ? 3 * 1024 * 1024 : 2 * 1024 * 1024; // 3MB or 2MB
+    if (file.size > maxSize) {
+        const maxSizeMB = maxSize / (1024 * 1024);
+        showError(`File size must be less than ${maxSizeMB}MB.`);
+        input.value = '';
+        updateFileDisplay(input, input.parentElement.querySelector('.file-input-display span'));
+        return;
+    }
+}
+
+// Form submission handler
+async function handleFormSubmission(event) {
+    event.preventDefault();
+    console.log('Form submission started');
+    
+    try {
+    showLoading();
+    
+        // Get form data
+        const formData = new FormData(elements.form);
+        
+        // Validate required fields
+        const requiredFields = ['name', 'email', 'phone', 'college', 'department', 'year'];
+        for (const field of requiredFields) {
+            if (!formData.get(field)) {
+                throw new Error(`Please fill in all required fields. Missing: ${field}`);
+            }
+        }
+        
+        // Validate file uploads
+        if (!formData.get('idCard')) {
+            throw new Error('Please upload your ID Card.');
+        }
+        
+        // Get checkbox values
+        const committees = Array.from(document.querySelectorAll('input[name="committees"]:checked')).map(cb => cb.value);
+        const positions = Array.from(document.querySelectorAll('input[name="positions"]:checked')).map(cb => cb.value);
+        
+        if (committees.length === 0) {
+            throw new Error('Please select at least one committee preference.');
+        }
+        
+        if (positions.length === 0) {
+            throw new Error('Please select at least one position preference.');
+        }
+        
+        // Add checkbox values to form data
+        formData.set('committees', JSON.stringify(committees));
+        formData.set('positions', JSON.stringify(positions));
+        
+        console.log('Submitting form data...');
+        
+        // Submit form
+        const response = await axios.post('/api/submit', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        console.log('Form submission response:', response);
+        
+        if (response.data.success) {
+        hideLoading();
+        showSuccessModal();
+        elements.form.reset();
+            
+            // Reset file displays
+            document.querySelectorAll('.file-input-display span').forEach(span => {
+                span.textContent = span.textContent.includes('Optional') ? 'Choose file or drag here (Optional)' : 'Choose file or drag here';
+                span.style.color = 'var(--text-light)';
+                span.style.fontWeight = 'normal';
+            });
+        } else {
+            throw new Error(response.data.message || 'Form submission failed.');
+        }
+        
+    } catch (error) {
+        hideLoading();
+        console.error('Form submission error:', error);
+        
+        if (error.response) {
+            // Server error
+            showError(error.response.data.message || 'Server error occurred. Please try again.');
+        } else if (error.message) {
+            // Validation error
+            showError(error.message);
+        } else {
+            // Network error
+            showError('Network error. Please check your connection and try again.');
+        }
+    }
+}
+
+// Load dashboard data
+async function loadDashboardData() {
+    // Prevent multiple loads
+    if (dashboardLoaded) {
+        console.log('Dashboard already loaded, skipping...');
+        return;
+    }
+    
+    // Set loading flag immediately to prevent concurrent calls
+    dashboardLoaded = true;
+    console.log('Loading dashboard data...', new Date().toISOString());
+    
+    try {
+        // Load statistics
+        const statsResponse = await axios.get('/api/admin/stats');
+        if (statsResponse.data.success) {
+            updateStatistics(statsResponse.data.data);
+        }
+        
+        // Load registrations
+        const registrationsResponse = await axios.get('/api/admin/registrations');
+        if (registrationsResponse.data.success) {
+            currentRegistrations = registrationsResponse.data.data;
+            updateRegistrationsTable(currentRegistrations);
+        }
+        
+        console.log('Dashboard data loaded successfully');
+        
+    } catch (error) {
+        console.error('Dashboard data loading error:', error);
+        // Use mock data for development
+        updateStatistics({
+            total: 0,
+            committeeStats: {
+                'UNSC': 0,
+                'UNODC': 0,
+                'LOK SABHA': 0,
+                'CCC': 0,
+                'IPC': 0,
+                'DISEC': 0
+            },
+            positionStats: {
+                'Chairperson': 0,
+                'Vice-Chairperson': 0,
+                'Director': 0
+            },
+            yearStats: {
+                '1': 0,
+                '2': 0,
+                '3': 0,
+                '4': 0,
+                '5': 0
+            },
+            recentSubmissions: []
+        });
+        updateRegistrationsTable([]);
+    }
+}
+
+// Update statistics
+function updateStatistics(stats) {
+    // Prevent multiple calls
+    if (!stats || typeof stats !== 'object') {
+        console.warn('Invalid stats data provided to updateStatistics');
+        return;
+    }
+    
+    // Update total registrations
+    const totalElement = document.getElementById('totalRegistrations');
+    if (totalElement) {
+        totalElement.textContent = stats.total || 0;
+    }
+    
+    // Update today's registrations
+    const todayElement = document.getElementById('todayRegistrations');
+    if (todayElement) {
+        const today = new Date().toDateString();
+        const todayCount = stats.recentSubmissions ? 
+            stats.recentSubmissions.filter(sub => 
+                new Date(sub.submittedAt).toDateString() === today
+            ).length : 0;
+        todayElement.textContent = todayCount;
+    }
+    
+    // Update weekly registrations
+    const weeklyElement = document.getElementById('weeklyRegistrations');
+    if (weeklyElement) {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        const weeklyCount = stats.recentSubmissions ? 
+            stats.recentSubmissions.filter(sub => 
+                new Date(sub.submittedAt) >= weekAgo
+            ).length : 0;
+        weeklyElement.textContent = weeklyCount;
+    }
+}
+
+
+
+// Update registrations table
+function updateRegistrationsTable(registrations) {
+    const tbody = document.querySelector('#registrationsTable tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (registrations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No registrations found</td></tr>';
+        return;
+    }
+    
+    registrations.forEach(reg => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${reg.name || 'N/A'}</td>
+            <td>${reg.email || 'N/A'}</td>
+            <td>${reg.phone || 'N/A'}</td>
+            <td>${reg.year || 'N/A'}</td>
+            <td>${Array.isArray(reg.committees) ? reg.committees.join(', ') : 'N/A'}</td>
+            <td>${Array.isArray(reg.positions) ? reg.positions.join(', ') : 'N/A'}</td>
+            <td>${reg.submittedAt ? new Date(reg.submittedAt).toLocaleDateString() : 'N/A'}</td>
+            <td>
+                <button class="btn btn-outline view-btn" data-registration-id="${reg.id}">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-outline delete-btn" data-registration-id="${reg.id}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Page-specific initialization
+function initializePage() {
+    const path = window.location.pathname;
+    console.log('Initializing page for path:', path);
+    
+    if (path === '/admin') {
+        // Admin page specific initialization
+        if (elements.adminDashboard && !dashboardLoaded) {
+            console.log('Admin dashboard found, loading data...');
+            // Add a small delay to ensure DOM is fully ready
+            setTimeout(() => {
+                if (!dashboardLoaded) {
+                    loadDashboardData();
+                }
+            }, 100);
+        } else {
+            console.log('Admin dashboard element not found or already loaded');
+        }
+    } else if (path === '/form') {
+        // Form page specific initialization
+        console.log('Application form initialized');
+    }
+}
+
+// Tab switching
+function switchTab(tabName) {
+    // Remove active class from all tabs and contents
+    elements.tabBtns.forEach(btn => btn.classList.remove('active'));
+    elements.tabContents.forEach(content => content.classList.remove('active'));
+    
+    // Add active class to selected tab and content
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}Tab`).classList.add('active');
+}
+
+// Search functionality
+function handleSearch(event) {
+    const searchTerm = event.target.value.toLowerCase();
+    const filteredRegistrations = currentRegistrations.filter(reg => 
+        reg.name?.toLowerCase().includes(searchTerm) ||
+        reg.email?.toLowerCase().includes(searchTerm) ||
+        reg.phone?.includes(searchTerm) ||
+        reg.college?.toLowerCase().includes(searchTerm)
+    );
+    updateRegistrationsTable(filteredRegistrations);
+}
+
+// Filter functionality
+function handleFilter() {
+    const committeeFilter = elements.committeeFilter?.value || '';
+    const positionFilter = elements.positionFilter?.value || '';
+    
+    let filteredRegistrations = currentRegistrations;
+    
+    if (committeeFilter) {
+        filteredRegistrations = filteredRegistrations.filter(reg => 
+            Array.isArray(reg.committees) && reg.committees.includes(committeeFilter)
+        );
+    }
+    
+    if (positionFilter) {
+        filteredRegistrations = filteredRegistrations.filter(reg => 
+            Array.isArray(reg.positions) && reg.positions.includes(positionFilter)
+        );
+    }
+    
+    updateRegistrationsTable(filteredRegistrations);
+}
+
+// Handle mailer tab change
+function handleMailerTabChange(event) {
+    const clickedTab = event.currentTarget;
+    const recipientType = clickedTab.dataset.recipientType;
+    
+    // Update active tab
+    document.querySelectorAll('.mailer-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    clickedTab.classList.add('active');
+    
+    // Show/hide appropriate sections
+    const recipientsGroup = document.getElementById('recipientsGroup');
+    const singleEmailGroup = document.getElementById('singleEmailGroup');
+    
+    if (recipientType === 'single') {
+        recipientsGroup.style.display = 'none';
+        singleEmailGroup.style.display = 'block';
+    } else {
+        recipientsGroup.style.display = 'block';
+        singleEmailGroup.style.display = 'none';
+    }
+}
+
+// Preview functionality
+function handlePreview() {
+    const subject = elements.mailerForm?.querySelector('#subject')?.value || '';
+    const message = elements.mailerForm?.querySelector('#message')?.value || '';
+    const activeTab = document.querySelector('.mailer-tab-btn.active');
+    const recipientType = activeTab?.dataset.recipientType;
+    
+    if (!subject || !message) {
+        showError('Please fill in both subject and message before previewing.');
+        return;
+    }
+    
+    // Determine recipients
+    let recipients = '';
+    if (recipientType === 'single') {
+        const singleEmail = document.getElementById('singleEmail')?.value || '';
+        if (!singleEmail) {
+            showError('Please enter an email address for single recipient.');
+            return;
+        }
+        recipients = singleEmail;
+    } else {
+        const selectedRecipients = Array.from(document.querySelectorAll('#recipients option:checked')).map(opt => opt.text);
+        if (selectedRecipients.length === 0) {
+            showError('Please select at least one recipient group.');
+            return;
+        }
+        recipients = selectedRecipients.join(', ');
+    }
+    
+    // Show email preview modal
+    showEmailPreviewModal(subject, message, recipients);
+}
+
+// Show email preview modal
+function showEmailPreviewModal(subject, message, recipients) {
+    const modal = document.getElementById('emailPreviewModal');
+    const previewSubject = document.getElementById('previewSubject');
+    const previewTo = document.getElementById('previewTo');
+    const previewBody = document.getElementById('previewBody');
+    
+    previewSubject.textContent = subject;
+    previewTo.textContent = recipients;
+    
+    // Create email HTML content
+    const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #172d9d 0%, #797dfa 100%); color: white; padding: 30px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px;">KMUN'25</h1>
+                <p style="margin: 10px 0 0 0; font-size: 16px;">Executive Board Recruitment</p>
+            </div>
+            <div style="padding: 30px; background: #ffffff;">
+                ${message.replace(/\n/g, '<br>')}
+            </div>
+        </div>
+    `;
+    
+    previewBody.innerHTML = emailHtml;
+    modal.style.display = 'flex';
+}
+
+// Hide email preview modal
+function hideEmailPreviewModal() {
+    const modal = document.getElementById('emailPreviewModal');
+    modal.style.display = 'none';
+}
+
+// Send email from preview
+async function sendEmailFromPreview() {
+    try {
+        showLoading();
+        
+        // Create request data object (same as handleMailerSubmission)
+        const requestData = {};
+        
+        const activeTab = document.querySelector('.mailer-tab-btn.active');
+        const recipientType = activeTab?.dataset.recipientType;
+        const emailProvider = document.getElementById('emailProvider')?.value;
+        const subject = document.getElementById('subject')?.value;
+        const message = document.getElementById('message')?.value;
+        
+        // Handle recipients based on type
+        if (recipientType === 'single') {
+            const singleEmail = document.getElementById('singleEmail')?.value;
+            requestData.recipients = singleEmail;
+        } else {
+            const selectedRecipients = Array.from(document.querySelectorAll('#recipients option:checked')).map(opt => opt.value);
+            requestData.recipients = selectedRecipients;
+        }
+        
+        // Add other form data
+        requestData.subject = subject;
+        requestData.message = message;
+        requestData.smtpProvider = emailProvider;
+        
+        const response = await axios.post('/api/admin/send-mail', requestData, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.data.success) {
+            showSuccess('Email sent successfully!');
+            elements.mailerForm.reset();
+            hideEmailPreviewModal();
+            
+            // Reset to first tab
+            const firstTab = document.querySelector('.mailer-tab-btn');
+            if (firstTab) {
+                firstTab.click();
+            }
+        } else {
+            throw new Error(response.data.message || 'Failed to send email.');
+        }
+        
+    } catch (error) {
+        console.error('Mailer error:', error);
+        showError(error.response?.data?.message || 'Failed to send email.');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Export to Excel
+function exportToExcel() {
+    if (currentRegistrations.length === 0) {
+        showError('No data to export.');
+        return;
+    }
+    
+    try {
+    const worksheet = XLSX.utils.json_to_sheet(currentRegistrations.map(reg => ({
+            Name: reg.name || 'N/A',
+            Email: reg.email || 'N/A',
+            Phone: reg.phone || 'N/A',
+            College: reg.college || 'N/A',
+            Department: reg.department || 'N/A',
+            Year: reg.year || 'N/A',
+            'MUNs Participated': reg.munsParticipated || 'N/A',
+            'MUNs with Awards': reg.munsWithAwards || 'N/A',
+            'Organizing Experience': reg.organizingExperience || 'N/A',
+            'MUNs Chaired': reg.munsChaired || 'N/A',
+            Committees: Array.isArray(reg.committees) ? reg.committees.join(', ') : 'N/A',
+            Positions: Array.isArray(reg.positions) ? reg.positions.join(', ') : 'N/A',
+            'Submitted At': reg.submittedAt ? new Date(reg.submittedAt).toLocaleString() : 'N/A'
+    })));
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Registrations');
+    
+        XLSX.writeFile(workbook, `Kumaraguru_MUN_Registrations_${new Date().toISOString().split('T')[0]}.xlsx`);
+        
+        showSuccess('Data exported successfully!');
+    } catch (error) {
+        console.error('Export error:', error);
+        showError('Failed to export data.');
+    }
+}
+
+// Mailer submission
+async function handleMailerSubmission(event) {
+    event.preventDefault();
+    
+    try {
+        showLoading();
+        
+        // Create request data object
+        const requestData = {};
+        
+        // Get form data
+        const activeTab = document.querySelector('.mailer-tab-btn.active');
+        const recipientType = activeTab?.dataset.recipientType;
+        const emailProvider = document.getElementById('emailProvider')?.value;
+        const subject = document.getElementById('subject')?.value;
+        const message = document.getElementById('message')?.value;
+        
+        // Validate required fields
+        if (!subject || !message) {
+            showError('Please fill in both subject and message.');
+            return;
+        }
+        
+        // Handle recipients based on type
+        if (recipientType === 'single') {
+            const singleEmail = document.getElementById('singleEmail')?.value;
+            if (!singleEmail) {
+                showError('Please enter an email address for single recipient.');
+                return;
+            }
+            requestData.recipients = singleEmail;
+        } else {
+            const selectedRecipients = Array.from(document.querySelectorAll('#recipients option:checked')).map(opt => opt.value);
+            if (selectedRecipients.length === 0) {
+                showError('Please select at least one recipient group.');
+                return;
+            }
+            requestData.recipients = selectedRecipients;
+        }
+        
+        // Add other form data
+        requestData.subject = subject;
+        requestData.message = message;
+        requestData.smtpProvider = emailProvider;
+        
+        // Debug logging
+        console.log('Sending mail request:', {
+            recipientType,
+            recipients: recipientType === 'single' ? document.getElementById('singleEmail')?.value : Array.from(document.querySelectorAll('#recipients option:checked')).map(opt => opt.value),
+            emailProvider,
+            subject,
+            message: message ? 'Message provided' : 'No message'
+        });
+        
+        const response = await axios.post('/api/admin/send-mail', requestData, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.data.success) {
+            showSuccess('Email sent successfully!');
+            elements.mailerForm.reset();
+            
+            // Reset to first tab
+            const firstTab = document.querySelector('.mailer-tab-btn');
+            if (firstTab) {
+                firstTab.click();
+            }
+        } else {
+            throw new Error(response.data.message || 'Failed to send email.');
+        }
+        
+    } catch (error) {
+        console.error('Mailer error:', error);
+        showError(error.response?.data?.message || 'Failed to send email.');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Utility functions
+function showLoading() {
+    elements.loadingOverlay.style.display = 'flex';
+}
+
+function hideLoading() {
+    elements.loadingOverlay.style.display = 'none';
+}
+
+function showSuccessModal() {
+    elements.successModal.style.display = 'flex';
+}
+
+function hideSuccessModal() {
+    elements.successModal.style.display = 'none';
+}
+
+function hideFileLinksModal() {
+    elements.fileLinksModal.style.display = 'none';
+    currentRegistration = null;
+}
+
+// Show view mode
+function showViewMode() {
+    elements.modalTitle.textContent = 'Registration Details';
+    elements.registrationDetailsContent.style.display = 'block';
+    elements.registrationEditContent.style.display = 'none';
+    elements.editBtn.style.display = 'inline-flex';
+    elements.saveBtn.style.display = 'none';
+    elements.cancelBtn.style.display = 'none';
+    elements.closeFileLinksModal.style.display = 'inline-flex';
+}
+
+// Show edit mode
+function showEditMode() {
+    elements.modalTitle.textContent = 'Edit Registration';
+    elements.registrationDetailsContent.style.display = 'none';
+    elements.registrationEditContent.style.display = 'block';
+    elements.editBtn.style.display = 'none';
+    elements.saveBtn.style.display = 'inline-flex';
+    elements.cancelBtn.style.display = 'inline-flex';
+    elements.closeFileLinksModal.style.display = 'none';
+}
+
+// Start edit mode
+function startEditMode() {
+    if (!currentRegistration) return;
+    
+    // Generate edit form HTML
+    const editHTML = generateEditFormHTML(currentRegistration);
+    elements.registrationEditContent.innerHTML = editHTML;
+    
+    showEditMode();
+}
+
+// Cancel edit mode
+function cancelEditMode() {
+    showViewMode();
+}
+
+// Save registration changes
+async function saveRegistration() {
+    try {
+        if (!currentRegistration) return;
+        
+        // Collect form data
+        const formData = collectEditFormData();
+        
+        if (!formData) {
+            showError('Please fill in all required fields');
+            return;
+        }
+        
+        // Prompt for secure access key
+        const { value: accessKey } = await Swal.fire({
+            title: 'Secure Access Required',
+            text: 'Please enter the secure access key to save changes.',
+            input: 'password',
+            inputLabel: 'Secure Access Key',
+            inputPlaceholder: 'Enter secure access key',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please enter the secure access key';
+                }
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Verify & Save',
+            cancelButtonText: 'Cancel',
+            showLoaderOnConfirm: true,
+            preConfirm: async (accessKey) => {
+                try {
+                    const verifyResponse = await axios.post('/api/admin/verify-access-key', { accessKey });
+                    if (!verifyResponse.data.success) {
+                        throw new Error(verifyResponse.data.message || 'Invalid access key');
+                    }
+                    return accessKey;
+                } catch (error) {
+                    Swal.showValidationMessage(error.response?.data?.message || 'Access key verification failed');
+                    return false;
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        });
+
+        if (!accessKey) {
+            return;
+        }
+        
+        showLoading();
+        
+        // Update registration in database
+        const response = await axios.put(`/api/admin/registrations/${currentRegistration.id}`, formData);
+        
+        if (response.data.success) {
+            // Update local data
+            const index = currentRegistrations.findIndex(reg => reg.id === currentRegistration.id);
+            if (index !== -1) {
+                currentRegistrations[index] = { ...currentRegistration, ...formData };
+                currentRegistration = currentRegistrations[index];
+            }
+            
+            // Regenerate view HTML
+            const detailsHTML = generateRegistrationDetailsHTML(currentRegistration);
+            elements.registrationDetailsContent.innerHTML = detailsHTML;
+            
+            showViewMode();
+            
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Registration updated successfully.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            throw new Error(response.data.message || 'Failed to update registration');
+        }
+        
+    } catch (error) {
+        console.error('Error saving registration:', error);
+        
+        await Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to save changes',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    } finally {
+        hideLoading();
+    }
+}
+
+function showSuccess(message) {
+    // Create a simple success notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        z-index: 1001;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function showError(message) {
+    // Create a simple error notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #ef4444;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        z-index: 1001;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+
+
+// Table action handler
+function handleTableAction(event) {
+    const target = event.target;
+    
+    // Check if the clicked element is a button or its child
+    const button = target.closest('.view-btn, .delete-btn');
+    if (!button) return;
+    
+    const registrationId = button.dataset.registrationId;
+    if (!registrationId) return;
+    
+    // Determine which action to perform based on the button class
+    if (button.classList.contains('view-btn')) {
+        viewRegistration(registrationId);
+    } else if (button.classList.contains('delete-btn')) {
+        deleteRegistration(registrationId);
+    }
+}
+
+// Global variable to store current registration being viewed/edited
+let currentRegistration = null;
+
+// Admin functions
+async function viewRegistration(id) {
+    try {
+        showLoading();
+        
+        // Find the registration in current data
+        const registration = currentRegistrations.find(reg => reg.id === id);
+        
+        if (!registration) {
+            throw new Error('Registration not found');
+        }
+        
+        // Store current registration
+        currentRegistration = registration;
+        
+        // Generate complete registration details HTML
+        const detailsHTML = generateRegistrationDetailsHTML(registration);
+        elements.registrationDetailsContent.innerHTML = detailsHTML;
+        
+        // Show view mode
+        showViewMode();
+        
+        // Show the modal
+        elements.fileLinksModal.style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error viewing registration:', error);
+        showError('Failed to load registration details');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Generate HTML for complete registration details
+function generateRegistrationDetailsHTML(registration) {
+    // Helper function to format committees and positions
+    const formatArray = (arr) => {
+        if (!arr) return [];
+        if (Array.isArray(arr)) return arr;
+        try {
+            return JSON.parse(arr);
+        } catch {
+            return [arr];
+        }
+    };
+    
+    const committees = formatArray(registration.committees);
+    const positions = formatArray(registration.positions);
+    
+    // Generate file links
+    const fileLinks = [];
+    
+    if (registration.idCardUrl) {
+        fileLinks.push({
+            name: 'ID Card',
+            url: registration.idCardUrl,
+            icon: 'fas fa-id-card'
+        });
+    }
+    
+    if (registration.munCertificatesUrl) {
+        fileLinks.push({
+            name: 'MUN Certificates',
+            url: registration.munCertificatesUrl,
+            icon: 'fas fa-certificate'
+        });
+    }
+    
+    if (registration.chairingResumeUrl) {
+        fileLinks.push({
+            name: 'Chairing Resume',
+            url: registration.chairingResumeUrl,
+            icon: 'fas fa-file-alt'
+        });
+    }
+    
+    // Check for files object (for backward compatibility)
+    if (registration.files && typeof registration.files === 'object') {
+        Object.entries(registration.files).forEach(([key, url]) => {
+            if (url && typeof url === 'string') {
+                const name = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                fileLinks.push({
+                    name: name,
+                    url: url,
+                    icon: 'fas fa-file'
+                });
+            }
+        });
+    }
+    
+    return `
+        <!-- Personal Information -->
+        <div class="registration-section">
+            <h4><i class="fas fa-user"></i> Personal Information</h4>
+            <div class="registration-grid">
+                <div class="registration-field">
+                    <label>Full Name</label>
+                    <div class="value">${registration.name || '<span class="empty">Not provided</span>'}</div>
+                </div>
+                <div class="registration-field">
+                    <label>Email Address</label>
+                    <div class="value">${registration.email || '<span class="empty">Not provided</span>'}</div>
+                </div>
+                <div class="registration-field">
+                    <label>Phone Number</label>
+                    <div class="value">${registration.phone || '<span class="empty">Not provided</span>'}</div>
+                </div>
+                <div class="registration-field">
+                    <label>College</label>
+                    <div class="value">${registration.college || '<span class="empty">Not provided</span>'}</div>
+                </div>
+                <div class="registration-field">
+                    <label>Department</label>
+                    <div class="value">${registration.department || '<span class="empty">Not provided</span>'}</div>
+                </div>
+                <div class="registration-field">
+                    <label>Year of Study</label>
+                    <div class="value">${registration.year || '<span class="empty">Not provided</span>'}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MUN Experience -->
+        <div class="registration-section">
+            <h4><i class="fas fa-trophy"></i> MUN Experience</h4>
+            <div class="registration-grid">
+                <div class="registration-field">
+                    <label>MUNs Participated</label>
+                    <div class="value">${registration.munsParticipated || 0}</div>
+                </div>
+                <div class="registration-field">
+                    <label>MUNs with Awards</label>
+                    <div class="value">${registration.munsWithAwards || 0}</div>
+                </div>
+                <div class="registration-field">
+                    <label>MUNs Chaired</label>
+                    <div class="value">${registration.munsChaired || 0}</div>
+                </div>
+                <div class="registration-field">
+                    <label>Organizing Experience</label>
+                    <div class="value">${registration.organizingExperience || '<span class="empty">Not provided</span>'}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="registration-section">
+            <h4><i class="fas fa-list-check"></i> Committee & Position Preferences</h4>
+            <div class="registration-grid">
+                <div class="registration-field">
+                    <label>Committee Preferences</label>
+                    <div class="value">
+                        ${committees.length > 0 ? 
+                            `<div class="committees-list">
+                                ${committees.map(committee => `<span class="committee-tag">${committee}</span>`).join('')}
+                            </div>` : 
+                            '<span class="empty">No committees selected</span>'
+                        }
+                    </div>
+                </div>
+                <div class="registration-field">
+                    <label>Position Preferences</label>
+                    <div class="value">
+                        ${positions.length > 0 ? 
+                            `<div class="positions-list">
+                                ${positions.map(position => `<span class="position-tag">${position}</span>`).join('')}
+                            </div>` : 
+                            '<span class="empty">No positions selected</span>'
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submission Details -->
+        <div class="registration-section">
+            <h4><i class="fas fa-clock"></i> Submission Details</h4>
+            <div class="registration-grid">
+                <div class="registration-field">
+                    <label>Submitted At</label>
+                    <div class="value">${registration.submittedAt ? new Date(registration.submittedAt).toLocaleString() : '<span class="empty">Not available</span>'}</div>
+                </div>
+                <div class="registration-field">
+                    <label>Status</label>
+                    <div class="value">${registration.status || 'pending'}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Uploaded Files -->
+        <div class="registration-section file-links-section">
+            <h4><i class="fas fa-file-alt"></i> Uploaded Files</h4>
+            <div class="file-links-list">
+                ${fileLinks.length > 0 ? 
+                    fileLinks.map(file => `
+                        <div class="file-link-item">
+                            <div class="file-link-header">
+                                <i class="${file.icon}"></i>
+                                <h5>${file.name}</h5>
+                            </div>
+                            <a href="${file.url}" target="_blank" class="file-link-url">
+                                ${file.url}
+                            </a>
+                        </div>
+                    `).join('') : 
+                    '<div class="no-files-message">No files uploaded for this registration.</div>'
+                }
+            </div>
+        </div>
+    `;
+}
+
+// Generate HTML for edit form
+function generateEditFormHTML(registration) {
+    const formatArray = (arr) => {
+        if (!arr) return [];
+        if (Array.isArray(arr)) return arr;
+        try {
+            return JSON.parse(arr);
+        } catch {
+            return [arr];
+        }
+    };
+    
+    const committees = formatArray(registration.committees);
+    const positions = formatArray(registration.positions);
+    
+    return `
+        <form id="editRegistrationForm">
+            <!-- Personal Information -->
+            <div class="registration-section">
+                <h4><i class="fas fa-user"></i> Personal Information</h4>
+                <div class="registration-grid">
+                    <div class="form-group">
+                        <label for="editName">Full Name *</label>
+                        <input type="text" id="editName" name="name" value="${registration.name || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmail">Email Address *</label>
+                        <input type="email" id="editEmail" name="email" value="${registration.email || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPhone">Phone Number *</label>
+                        <input type="tel" id="editPhone" name="phone" value="${registration.phone || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCollege">College *</label>
+                        <input type="text" id="editCollege" name="college" value="${registration.college || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDepartment">Department *</label>
+                        <input type="text" id="editDepartment" name="department" value="${registration.department || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editYear">Year of Study *</label>
+                        <input type="number" id="editYear" name="year" value="${registration.year || ''}" min="1" max="4" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MUN Experience -->
+            <div class="registration-section">
+                <h4><i class="fas fa-trophy"></i> MUN Experience</h4>
+                <div class="registration-grid">
+                    <div class="form-group">
+                        <label for="editMunsParticipated">MUNs Participated</label>
+                        <input type="number" id="editMunsParticipated" name="munsParticipated" value="${registration.munsParticipated || 0}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editMunsWithAwards">MUNs with Awards</label>
+                        <input type="number" id="editMunsWithAwards" name="munsWithAwards" value="${registration.munsWithAwards || 0}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editMunsChaired">MUNs Chaired</label>
+                        <input type="number" id="editMunsChaired" name="munsChaired" value="${registration.munsChaired || 0}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editOrganizingExperience">Organizing Experience</label>
+                        <textarea id="editOrganizingExperience" name="organizingExperience" rows="3">${registration.organizingExperience || ''}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences -->
+            <div class="registration-section">
+                <h4><i class="fas fa-list-check"></i> Committee & Position Preferences</h4>
+                <div class="registration-grid">
+                    <div class="form-group">
+                        <label>Committee Preferences *</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="committees" value="UNSC" ${committees.includes('UNSC') ? 'checked' : ''}>
+                                <span>UNSC</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="committees" value="UNODC" ${committees.includes('UNODC') ? 'checked' : ''}>
+                                <span>UNODC</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="committees" value="LOK SABHA" ${committees.includes('LOK SABHA') ? 'checked' : ''}>
+                                <span>LOK SABHA</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="committees" value="CCC" ${committees.includes('CCC') ? 'checked' : ''}>
+                                <span>CCC</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="committees" value="IPC" ${committees.includes('IPC') ? 'checked' : ''}>
+                                <span>IPC</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="committees" value="DISEC" ${committees.includes('DISEC') ? 'checked' : ''}>
+                                <span>DISEC</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Position Preferences *</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="positions" value="Chairperson" ${positions.includes('Chairperson') ? 'checked' : ''}>
+                                <span>Chairperson</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="positions" value="Vice-Chairperson" ${positions.includes('Vice-Chairperson') ? 'checked' : ''}>
+                                <span>Vice-Chairperson</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="positions" value="Director" ${positions.includes('Director') ? 'checked' : ''}>
+                                <span>Director</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="registration-section">
+                <h4><i class="fas fa-info-circle"></i> Status</h4>
+                <div class="registration-grid">
+                    <div class="form-group">
+                        <label for="editStatus">Status</label>
+                        <select id="editStatus" name="status">
+                            <option value="pending" ${registration.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="approved" ${registration.status === 'approved' ? 'selected' : ''}>Approved</option>
+                            <option value="rejected" ${registration.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Note: Files cannot be edited -->
+            <div class="registration-section">
+                <h4><i class="fas fa-file-alt"></i> Uploaded Files</h4>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Uploaded files cannot be edited. Files are managed separately.
+                </div>
+            </div>
+        </form>
+    `;
+}
+
+// Collect form data from edit form
+function collectEditFormData() {
+    const form = document.getElementById('editRegistrationForm');
+    if (!form) return null;
+    
+    const formData = new FormData(form);
+    const data = {};
+    
+    // Collect basic fields
+    for (const [key, value] of formData.entries()) {
+        if (key === 'committees' || key === 'positions') {
+            if (!data[key]) data[key] = [];
+            data[key].push(value);
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // Validate required fields
+    const requiredFields = ['name', 'email', 'phone', 'college', 'department', 'year'];
+    for (const field of requiredFields) {
+        if (!data[field] || data[field].trim() === '') {
+            return null;
+        }
+    }
+    
+    // Validate committees and positions
+    if (!data.committees || data.committees.length === 0) {
+        return null;
+    }
+    if (!data.positions || data.positions.length === 0) {
+        return null;
+    }
+    
+    // Convert numeric fields
+    data.year = parseInt(data.year);
+    data.munsParticipated = parseInt(data.munsParticipated) || 0;
+    data.munsWithAwards = parseInt(data.munsWithAwards) || 0;
+    data.munsChaired = parseInt(data.munsChaired) || 0;
+    
+    return data;
+}
+
+function editRegistration(id) {
+    showSuccess(`Editing registration ${id}`);
+}
+
+async function deleteRegistration(id) {
+    try {
+        // Find the registration
+        const registration = currentRegistrations.find(reg => reg.id === id);
+        if (!registration) {
+            showError('Registration not found');
+            return;
+        }
+
+        // Show confirmation dialog with SweetAlert2
+        const result = await Swal.fire({
+            title: 'Delete Registration',
+            text: `Are you sure you want to delete the registration for ${registration.name}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        // Prompt for secure access key
+        const { value: accessKey } = await Swal.fire({
+            title: 'Secure Access Required',
+            text: 'Please enter the secure access key to confirm deletion.',
+            input: 'password',
+            inputLabel: 'Secure Access Key',
+            inputPlaceholder: 'Enter secure access key',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please enter the secure access key';
+                }
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Verify & Delete',
+            cancelButtonText: 'Cancel',
+            showLoaderOnConfirm: true,
+            preConfirm: async (accessKey) => {
+                try {
+                    const verifyResponse = await axios.post('/api/admin/verify-access-key', { accessKey });
+                    if (!verifyResponse.data.success) {
+                        throw new Error(verifyResponse.data.message || 'Invalid access key');
+                    }
+                    return accessKey;
+                } catch (error) {
+                    Swal.showValidationMessage(error.response?.data?.message || 'Access key verification failed');
+                    return false;
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        });
+
+        if (!accessKey) {
+            return;
+        }
+
+        // Proceed with deletion
+        showLoading();
+        const deleteResponse = await axios.delete(`/api/admin/registrations/${id}`);
+        
+        if (deleteResponse.data.success) {
+            // Remove from local data
+            const index = currentRegistrations.findIndex(reg => reg.id === id);
+            if (index !== -1) {
+                currentRegistrations.splice(index, 1);
+            }
+            
+            // Update table
+            updateRegistrationsTable(currentRegistrations);
+            
+            hideLoading();
+            
+            await Swal.fire({
+                title: 'Deleted!',
+                text: 'Registration has been deleted successfully.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            throw new Error(deleteResponse.data.message || 'Failed to delete registration');
+        }
+
+    } catch (error) {
+        hideLoading();
+        console.error('Error deleting registration:', error);
+        
+        await Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to delete registration',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    }
+}

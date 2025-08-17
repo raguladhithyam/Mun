@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kumaraguru MUN Executive Board Recruitment</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="/logo.png" alt="Kumaraguru MUN Logo" class="logo-image" onerror="this.style.display='none'">
+                    
+                    <div class="logo-text">
+                        <h1>Kumaraguru MUN</h1>
+                        <p>Executive Board Recruitment</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/" class="btn btn-outline">
+                        <i class="fas fa-home"></i>
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Application Form -->
+            <div id="applicationForm" class="form-container">
+                <div class="form-header">
+                    <h2>Executive Board Application</h2>
+                    <p>Join the organizing team for Kumaraguru MUN and make a difference</p>
+                </div>
+
+                <form id="ebForm" class="application-form">
+                    <!-- Section 1: Personal Details -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-user"></i> Personal Details</h3>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="name">Full Name *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email">Personal Email Address *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" name="phone" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="college">College/Institution *</label>
+                                <input type="text" id="college" name="college" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="department">Department of Study *</label>
+                                <input type="text" id="department" name="department" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="year">Year of Study *</label>
+                                <select id="year" name="year" required>
+                                    <option value="">Select Year</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                    <option value="5">5th Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group file-upload">
+                            <label for="idCard">Upload Aadhaar/ID Card (PDF, max 2MB) *</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="idCard" name="idCard" accept=".pdf" required>
+                                <div class="file-input-display">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Choose file or drag here</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: MUN Experience -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-trophy"></i> MUN Experience</h3>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="munsParticipated">MUNs Participated *</label>
+                                <input type="number" id="munsParticipated" name="munsParticipated" min="0" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="munsWithAwards">MUNs with Awards *</label>
+                                <input type="number" id="munsWithAwards" name="munsWithAwards" min="0" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="organizingExperience">Organizing Team Member Before? *</label>
+                                <select id="organizingExperience" name="organizingExperience" required>
+                                    <option value="">Select Option</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="munsChaired">MUNs Chaired *</label>
+                                <input type="number" id="munsChaired" name="munsChaired" min="0" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group file-upload">
+                            <label for="munCertificates">Upload MUN Certificates/Documents (PDF, max 2MB)</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="munCertificates" name="munCertificates" accept=".pdf">
+                                <div class="file-input-display">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Choose file or drag here (Optional)</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group file-upload">
+                            <label for="chairingResume">Upload Chairing/Organizing Resume (PDF, max 3MB)</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="chairingResume" name="chairingResume" accept=".pdf">
+                                <div class="file-input-display">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Choose file or drag here (Optional)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Kumaraguru MUN Preferences -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-star"></i> Kumaraguru MUN Preferences</h3>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Committee Preferences *</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="committees" value="UNSC">
+                                    <span class="checkmark"></span>
+                                    United Nations Security Council (UNSC)
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="committees" value="UNODC">
+                                    <span class="checkmark"></span>
+                                    United Nations Office on Drugs and Crime (UNODC)
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="committees" value="LOK SABHA">
+                                    <span class="checkmark"></span>
+                                    Lok Sabha
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="committees" value="CCC">
+                                    <span class="checkmark"></span>
+                                    Crisis Control Committee (CCC)
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="committees" value="IPC">
+                                    <span class="checkmark"></span>
+                                    International Press Corps (IPC)
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="committees" value="DISEC">
+                                    <span class="checkmark"></span>
+                                    Disarmament and International Security Committee (DISEC)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Preferred EB Positions *</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="positions" value="Chairperson">
+                                    <span class="checkmark"></span>
+                                    Chairperson
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="positions" value="Vice-Chairperson">
+                                    <span class="checkmark"></span>
+                                    Vice-Chairperson
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="positions" value="Director">
+                                    <span class="checkmark"></span>
+                                    Director
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-paper-plane"></i>
+                            Submit Application
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-check-circle"></i>
+                <h3>Application Submitted Successfully!</h3>
+            </div>
+            <div class="modal-body">
+                <p>Thank you for your application. We will review it and get back to you soon.</p>
+            </div>
+            <div class="modal-actions">
+                <button id="closeModal" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load external libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    
+    <!-- Load our scripts after external libraries -->
+    <script src="scripts.js"></script>
+</body>
+</html>

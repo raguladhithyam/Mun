@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kumaraguru MUN - Admin Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="/logo.png" alt="Kumaraguru MUN Logo" class="logo-image" onerror="this.style.display='none'">
+                    
+                    <div class="logo-text">
+                        <h1>Kumaraguru MUN</h1>
+                        <p>Admin Dashboard</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/" class="btn btn-outline">
+                        <i class="fas fa-home"></i>
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Admin Dashboard -->
+            <div id="adminDashboard" class="admin-dashboard">
+                <div class="dashboard-header">
+                    <h2>Admin Dashboard</h2>
+                    <p>Manage Executive Board applications and communications</p>
+                </div>
+
+                <div class="dashboard-tabs">
+                    <button class="tab-btn active" data-tab="statistics">
+                        <i class="fas fa-chart-bar"></i>
+                        Statistics
+                    </button>
+                    <button class="tab-btn" data-tab="registrations">
+                        <i class="fas fa-users"></i>
+                        Registrations
+                    </button>
+                    <button class="tab-btn" data-tab="mailer">
+                        <i class="fas fa-envelope"></i>
+                        Mailer
+                    </button>
+                </div>
+
+                <!-- Statistics Tab -->
+                <div id="statisticsTab" class="tab-content active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="totalRegistrations">0</h3>
+                                <p>Total Registrations</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="todayRegistrations">0</h3>
+                                <p>Today's Registrations</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="weeklyRegistrations">0</h3>
+                                <p>This Week</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Registrations Tab -->
+                <div id="registrationsTab" class="tab-content">
+                    <div class="table-controls">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search registrations...">
+                        </div>
+                        <div class="filter-controls">
+                            <div class="custom-select">
+                                <select id="committeeFilter" class="select-styled">
+                                    <option value="">All Committees</option>
+                                    <option value="UNSC">UNSC</option>
+                                    <option value="UNODC">UNODC</option>
+                                    <option value="LOK SABHA">LOK SABHA</option>
+                                    <option value="CCC">CCC</option>
+                                    <option value="IPC">IPC</option>
+                                    <option value="DISEC">DISEC</option>
+                                </select>
+                                <i class="fas fa-chevron-down select-arrow"></i>
+                            </div>
+                            <div class="custom-select">
+                                <select id="positionFilter" class="select-styled">
+                                    <option value="">All Positions</option>
+                                    <option value="Chairperson">Chairperson</option>
+                                    <option value="Vice-Chairperson">Vice-Chairperson</option>
+                                    <option value="Director">Director</option>
+                                </select>
+                                <i class="fas fa-chevron-down select-arrow"></i>
+                            </div>
+                        </div>
+                        <button id="exportBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Export Excel
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table id="registrationsTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Year</th>
+                                    <th>Committees</th>
+                                    <th>Positions</th>
+                                    <th>Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mailer Tab -->
+                <div id="mailerTab" class="tab-content">
+                    <form id="mailerForm" class="mailer-form">
+                        <!-- Recipient Type Tabs -->
+                        <div class="mailer-tabs">
+                            <button type="button" class="mailer-tab-btn active" data-recipient-type="registrants">
+                                <i class="fas fa-users"></i>
+                                Send to Registrants
+                            </button>
+                            <button type="button" class="mailer-tab-btn" data-recipient-type="single">
+                                <i class="fas fa-user"></i>
+                                Send to Single Person
+                            </button>
+                        </div>
+                        
+                        <!-- Recipients Section -->
+                        <div class="form-group" id="recipientsGroup">
+                            <label for="recipients">Recipients</label>
+                            <div class="custom-select">
+                                <select id="recipients" name="recipients" class="select-styled" multiple>
+                                    <option value="all">All Registrants</option>
+                                    <option value="unsc">UNSC Applicants</option>
+                                    <option value="unodc">UNODC Applicants</option>
+                                    <option value="lok_sabha">Lok Sabha Applicants</option>
+                                    <option value="ccc">CCC Applicants</option>
+                                    <option value="ipc">IPC Applicants</option>
+                                    <option value="disec">DISEC Applicants</option>
+                                </select>
+                                <i class="fas fa-chevron-down select-arrow"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Single Email Section -->
+                        <div class="form-group" id="singleEmailGroup" style="display: none;">
+                            <label for="singleEmail">Email Address</label>
+                            <input type="email" id="singleEmail" name="singleEmail" placeholder="Enter email address">
+                        </div>
+                        
+                        <!-- Email Provider -->
+                        <div class="form-group">
+                            <label for="emailProvider">Email Provider</label>
+                            <div class="custom-select">
+                                <select id="emailProvider" name="emailProvider" class="select-styled">
+                                    <option value="gmail">Gmail</option>
+                                    <option value="outlook">Outlook</option>
+                                </select>
+                                <i class="fas fa-chevron-down select-arrow"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subject">Subject</label>
+                            <input type="text" id="subject" name="subject" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" rows="10" required></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                                Send Email
+                            </button>
+                            <button type="button" id="previewBtn" class="btn btn-outline">
+                                <i class="fas fa-eye"></i>
+                                Preview
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-check-circle"></i>
+                <h3>Operation Successful!</h3>
+            </div>
+            <div class="modal-body">
+                <p id="successMessage">The operation was completed successfully.</p>
+            </div>
+            <div class="modal-actions">
+                <button id="closeModal" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Preview Modal -->
+    <div id="emailPreviewModal" class="modal">
+        <div class="modal-content email-preview-modal">
+            <div class="modal-header">
+                <i class="fas fa-envelope"></i>
+                <h3>Email Preview</h3>
+                <button class="modal-close" id="closeEmailPreview">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="email-preview-content">
+                    <div class="email-header">
+                        <div class="email-subject">
+                            <strong>Subject:</strong> <span id="previewSubject"></span>
+                        </div>
+                        <div class="email-to">
+                            <strong>To:</strong> <span id="previewTo"></span>
+                        </div>
+                    </div>
+                    <div class="email-body" id="previewBody">
+                        <!-- Email content will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="sendFromPreview" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                    Send Email
+                </button>
+                <button id="closePreviewModal" class="btn btn-outline">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Details Modal -->
+    <div id="fileLinksModal" class="modal">
+        <div class="modal-content registration-details-modal">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <i class="fas fa-user"></i>
+                    <h3 id="modalTitle">Registration Details</h3>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="registration-details-content" id="registrationDetailsContent">
+                    <!-- Registration details will be inserted here -->
+                </div>
+                <div class="registration-edit-content" id="registrationEditContent" style="display: none;">
+                    <!-- Edit form will be inserted here -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="editBtn" class="btn btn-outline" style="display: none;">
+                    <i class="fas fa-edit"></i>
+                    Edit
+                </button>
+                <button id="saveBtn" class="btn btn-primary" style="display: none;">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+                <button id="cancelBtn" class="btn btn-outline" style="display: none;">
+                    Cancel
+                </button>
+                <button id="closeFileLinksModal" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load external libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Load our scripts after external libraries -->
+    <script src="scripts.js"></script>
+</body>
+</html>
