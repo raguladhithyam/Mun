@@ -2,8 +2,37 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Landing page loaded');
     
+    // Initialize page loader
+    initializePageLoader();
+    
     initializeLandingPage();
 });
+
+// Page Loader Functionality
+function initializePageLoader() {
+    const pageLoader = document.getElementById('page-loader');
+    
+    // Hide loader when page is fully loaded
+    window.addEventListener('load', function() {
+        setTimeout(() => {
+            pageLoader.classList.add('hidden');
+            // Remove loader from DOM after animation completes
+            setTimeout(() => {
+                pageLoader.remove();
+            }, 500);
+        }, 1000); // Show loader for at least 1 second
+    });
+    
+    // Fallback: Hide loader after 3 seconds if load event doesn't fire
+    setTimeout(() => {
+        if (pageLoader && !pageLoader.classList.contains('hidden')) {
+            pageLoader.classList.add('hidden');
+            setTimeout(() => {
+                pageLoader.remove();
+            }, 500);
+        }
+    }, 3000);
+}
 
 function initializeLandingPage() {
     // Smooth scrolling for navigation links
@@ -88,7 +117,7 @@ function initializeAnimations() {
     }, observerOptions);
     
     // Observe elements for animation
-    const animateElements = document.querySelectorAll('.about-card, .committee-card, .section-header');
+    const animateElements = document.querySelectorAll('.section-header');
     animateElements.forEach(el => {
         observer.observe(el);
     });
