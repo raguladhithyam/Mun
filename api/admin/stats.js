@@ -9,6 +9,8 @@ function verifySecureAccessKey(accessKey) {
 }
 
 module.exports = async (req, res) => {
+  console.log('📊 Stats endpoint called:', req.method, req.url);
+  
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -16,6 +18,7 @@ module.exports = async (req, res) => {
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('📊 Handling OPTIONS request');
     res.status(200).end();
     return;
   }
@@ -58,9 +61,11 @@ module.exports = async (req, res) => {
 
   // Handle GET requests for statistics
   if (req.method === 'GET') {
+    console.log('📊 Processing GET request for statistics');
     try {
       console.log('📊 Getting registration statistics');
       const stats = await getRegistrationStats();
+      console.log('📊 Statistics retrieved successfully:', stats);
       
       res.status(200).json({
         success: true,
@@ -79,6 +84,7 @@ module.exports = async (req, res) => {
   }
 
   // Handle other HTTP methods
+  console.log('📊 Method not allowed:', req.method);
   return res.status(405).json({
     success: false,
     message: 'Method not allowed'

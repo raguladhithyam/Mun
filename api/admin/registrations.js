@@ -14,8 +14,18 @@ module.exports = async (req, res) => {
   }
 
   // Extract registration ID from URL if present
-  const urlParts = req.url.split('/');
-  const registrationId = urlParts.length > 1 ? urlParts[1] : null;
+  // For Vercel serverless functions with regex routing, the ID might be in the URL
+  let registrationId = null;
+  
+  // Check if there's an ID in the URL path
+  if (req.url && req.url !== '/') {
+    const urlParts = req.url.split('/').filter(part => part.length > 0);
+    
+    // If there are URL parts, the first one should be the ID
+    if (urlParts.length > 0) {
+      registrationId = urlParts[0];
+    }
+  }
 
   // Handle individual registration operations (GET, PUT, DELETE by ID)
   if (registrationId) {

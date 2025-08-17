@@ -25,7 +25,15 @@
       "dest": "/api/admin/stats.js"
     },
     {
+      "src": "/api/admin/stats/(.*)",
+      "dest": "/api/admin/stats.js"
+    },
+    {
       "src": "/api/admin/registrations",
+      "dest": "/api/admin/registrations.js"
+    },
+    {
+      "src": "/api/admin/registrations/(.*)",
       "dest": "/api/admin/registrations.js"
     },
     {
@@ -36,7 +44,10 @@
       "src": "/api/admin/send-mail",
       "dest": "/api/admin/send-mail.js"
     },
-
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    },
     {
       "src": "/form",
       "dest": "/public/form.html"
