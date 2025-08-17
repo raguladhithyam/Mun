@@ -315,13 +315,14 @@ body {
 .checkbox-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    gap: 1rem;
+    padding: 1rem;
     border: 1px solid var(--border);
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: var(--transition);
     background: var(--background);
+    min-height: 60px;
 }
 
 .checkbox-item:hover {
@@ -334,12 +335,13 @@ body {
 }
 
 .checkmark {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border: 2px solid var(--border);
     border-radius: 4px;
     position: relative;
     transition: var(--transition);
+    flex-shrink: 0;
 }
 
 .checkbox-item input[type="checkbox"]:checked + .checkmark {
