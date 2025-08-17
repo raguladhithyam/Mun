@@ -38,7 +38,7 @@
     },
     {
       "src": "/api/admin/registrations/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/api/admin/registrations.js"
     },
     {
       "src": "/api/admin/export",
