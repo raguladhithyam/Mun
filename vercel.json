@@ -29,10 +29,6 @@
       "dest": "/api/admin/stats.js"
     },
     {
-      "src": "/api/admin/registrations",
-      "dest": "/api/admin/registrations.js"
-    },
-    {
       "src": "/api/admin/registrations/(.*)",
       "dest": "/api/admin/registrations.js"
     },

@@ -59,15 +59,20 @@ module.exports = async (req, res) => {
 
 // Handle individual registration operations
 async function handleIndividualRegistration(req, res, registrationId) {
+  console.log('📋 handleIndividualRegistration called with method:', req.method, 'and ID:', registrationId);
   try {
     switch (req.method) {
       case 'GET':
+        console.log('📋 Handling GET individual registration');
         return await handleGetRegistration(req, res, registrationId);
       case 'PUT':
+        console.log('📋 Handling PUT individual registration');
         return await handleUpdateRegistration(req, res, registrationId);
       case 'DELETE':
+        console.log('📋 Handling DELETE individual registration');
         return await handleDeleteRegistration(req, res, registrationId);
       default:
+        console.log('📋 Method not allowed in handleIndividualRegistration:', req.method);
         return res.status(405).json({
           success: false,
           message: 'Method not allowed'
@@ -169,6 +174,7 @@ async function handleUpdateRegistration(req, res, registrationId) {
 
 // Delete specific registration
 async function handleDeleteRegistration(req, res, registrationId) {
+  console.log('📋 handleDeleteRegistration called with ID:', registrationId);
   try {
     // Get the registration to handle file deletions
     const registration = await getDocument(COLLECTIONS.REGISTRATIONS, registrationId);
