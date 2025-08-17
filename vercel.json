@@ -16,8 +16,11 @@
       "dest": "/api/submit.js"
     },
     {
+      "dest": "/api/routes/formRoutes.js"
+    },
+    {
       "src": "/api/submit/validation-rules",
-      "dest": "/api/submit/validation-rules.js"
+      "dest": "/api/routes/formRoutes.js"
     },
 
     {

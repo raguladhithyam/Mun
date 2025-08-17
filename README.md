@@ -126,8 +126,8 @@ The `vercel.json` file is configured to:
 
 ### Form Submission
 - `POST /api/submit` - Submit application form
-- `GET /api/submit/validation-rules` - Get form validation rules
-- `POST /api/submit/check-email` - Check if email already exists
+- `GET /api/form/validation-rules` - Get form validation rules
+- `POST /api/form/check-email` - Check if email already exists
 
 ### Admin Dashboard
 - `GET /api/admin/stats` - Get dashboard statistics
