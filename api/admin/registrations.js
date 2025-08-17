@@ -1,5 +1,4 @@
-const { getCollection, getDocument, updateDocument, deleteDocument, COLLECTIONS } = require('../utils/firebase');
-const { deleteFromCloudinary, getPublicIdFromUrl } = require('../utils/cloudinaryUploader');
+const { getCollection, COLLECTIONS } = require('../utils/firebase');
 
 module.exports = async (req, res) => {
   // Enable CORS
@@ -13,216 +12,14 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Debug: Log the request details
-  console.log('📋 Registrations endpoint called:', req.method, req.url);
-  
-  // Extract registration ID from URL if present
-  // For Vercel serverless functions with regex routing, the ID might be in the URL
-  let registrationId = null;
-  
-  // Check if there's an ID in the URL path
-  // Only treat as ID if the URL is not empty and not just '/'
-  if (req.url && req.url !== '/' && req.url !== '') {
-    const urlParts = req.url.split('/').filter(part => part.length > 0);
-    console.log('📋 URL parts:', urlParts);
-    
-    // Only treat as ID if there are actual URL parts and it looks like an ID
-    if (urlParts.length > 0) {
-      const potentialId = urlParts[0];
-      // Check if it looks like a Firebase document ID (alphanumeric, at least 10 chars)
-      if (potentialId && potentialId.length >= 10 && /^[a-zA-Z0-9]+$/.test(potentialId)) {
-        registrationId = potentialId;
-      }
-    }
-  }
-  
-  console.log('📋 Registration ID:', registrationId);
-
-  // Handle individual registration operations (GET, PUT, DELETE by ID)
-  if (registrationId) {
-    console.log('📋 Handling individual registration:', registrationId);
-    return handleIndividualRegistration(req, res, registrationId);
-  }
-
-  // Handle collection operations (GET all registrations)
-  if (req.method === 'GET') {
-    console.log('📋 Handling GET all registrations');
-    return handleGetAllRegistrations(req, res);
-  }
-
-  // Method not allowed for collection endpoint
-  return res.status(405).json({
-    success: false,
-    message: 'Method not allowed'
-  });
-};
-
-// Handle individual registration operations
-async function handleIndividualRegistration(req, res, registrationId) {
-  console.log('📋 handleIndividualRegistration called with method:', req.method, 'and ID:', registrationId);
-  try {
-    switch (req.method) {
-      case 'GET':
-        console.log('📋 Handling GET individual registration');
-        return await handleGetRegistration(req, res, registrationId);
-      case 'PUT':
-        console.log('📋 Handling PUT individual registration');
-        return await handleUpdateRegistration(req, res, registrationId);
-      case 'DELETE':
-        console.log('📋 Handling DELETE individual registration');
-        return await handleDeleteRegistration(req, res, registrationId);
-      default:
-        console.log('📋 Method not allowed in handleIndividualRegistration:', req.method);
-        return res.status(405).json({
-          success: false,
-          message: 'Method not allowed'
-        });
-    }
-  } catch (error) {
-    console.error(`Error handling registration ${registrationId}:`, error);
-    res.status(500).json({
+  // Only allow GET requests
+  if (req.method !== 'GET') {
+    return res.status(405).json({
       success: false,
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: 'Method not allowed'
     });
   }
-}
 
-// Get specific registration
-async function handleGetRegistration(req, res, registrationId) {
-  try {
-    const registration = await getDocument(COLLECTIONS.REGISTRATIONS, registrationId);
-    
-    if (!registration) {
-      return res.status(404).json({
-        success: false,
-        message: 'Registration not found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: registration
-    });
-  } catch (error) {
-    console.error('Get registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch registration'
-    });
-  }
-}
-
-// Update specific registration
-async function handleUpdateRegistration(req, res, registrationId) {
-  try {
-    const updateData = req.body;
-    
-    // Get the current registration to handle file deletions
-    const currentRegistration = await getDocument(COLLECTIONS.REGISTRATIONS, registrationId);
-    if (!currentRegistration) {
-      return res.status(404).json({
-        success: false,
-        message: 'Registration not found'
-      });
-    }
-
-    // Handle file deletions if files are being updated
-    if (updateData.files && currentRegistration.files) {
-      const currentFiles = currentRegistration.files;
-      const newFiles = updateData.files;
-      
-      // Find files that were removed
-      const removedFiles = Object.keys(currentFiles).filter(key => !newFiles[key]);
-      
-      // Delete removed files from Cloudinary
-      for (const fileKey of removedFiles) {
-        const fileUrl = currentFiles[fileKey];
-        if (typeof fileUrl === 'string') {
-          const publicId = getPublicIdFromUrl(fileUrl);
-          if (publicId) {
-            try {
-              await deleteFromCloudinary(publicId);
-              console.log(`Deleted file from Cloudinary: ${publicId}`);
-            } catch (error) {
-              console.error('Error deleting file from Cloudinary:', error);
-            }
-          }
-        }
-      }
-    }
-
-    // Update the registration
-    await updateDocument(COLLECTIONS.REGISTRATIONS, registrationId, updateData);
-    
-    // Get the updated registration
-    const updatedRegistration = await getDocument(COLLECTIONS.REGISTRATIONS, registrationId);
-
-    res.status(200).json({
-      success: true,
-      data: updatedRegistration,
-      message: 'Registration updated successfully'
-    });
-  } catch (error) {
-    console.error('Update registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update registration'
-    });
-  }
-}
-
-// Delete specific registration
-async function handleDeleteRegistration(req, res, registrationId) {
-  console.log('📋 handleDeleteRegistration called with ID:', registrationId);
-  try {
-    // Get the registration to handle file deletions
-    const registration = await getDocument(COLLECTIONS.REGISTRATIONS, registrationId);
-    if (!registration) {
-      return res.status(404).json({
-        success: false,
-        message: 'Registration not found'
-      });
-    }
-
-    // Delete associated files from Cloudinary
-    if (registration.files) {
-      const deletePromises = Object.values(registration.files).map(async (fileUrl) => {
-        if (typeof fileUrl === 'string') {
-          const publicId = getPublicIdFromUrl(fileUrl);
-          if (publicId) {
-            try {
-              await deleteFromCloudinary(publicId);
-              console.log(`Deleted file from Cloudinary: ${publicId}`);
-            } catch (error) {
-              console.error('Error deleting file from Cloudinary:', error);
-            }
-          }
-        }
-      });
-      
-      await Promise.all(deletePromises);
-    }
-
-    // Delete the registration from Firestore
-    await deleteDocument(COLLECTIONS.REGISTRATIONS, registrationId);
-
-    res.status(200).json({
-      success: true,
-      message: 'Registration deleted successfully'
-    });
-  } catch (error) {
-    console.error('Delete registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete registration'
-    });
-  }
-}
-
-// Handle get all registrations (existing functionality)
-async function handleGetAllRegistrations(req, res) {
-  console.log('📋 handleGetAllRegistrations called');
   try {
     const { 
       page = 1, 
@@ -298,4 +95,4 @@ async function handleGetAllRegistrations(req, res) {
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
-} 
+}; 

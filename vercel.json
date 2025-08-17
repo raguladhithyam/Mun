@@ -25,11 +25,7 @@
       "dest": "/api/admin/stats.js"
     },
     {
-      "src": "/api/admin/stats/(.*)",
-      "dest": "/api/admin/stats.js"
-    },
-    {
-      "src": "/api/admin/registrations/(.*)",
+      "src": "/api/admin/registrations",
       "dest": "/api/admin/registrations.js"
     },
     {
@@ -41,8 +37,8 @@
       "dest": "/api/admin/send-mail.js"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
+      "src": "/api/admin/verify-access-key",
+      "dest": "/api/admin/verify-access-key.js"
     },
     {
       "src": "/form",

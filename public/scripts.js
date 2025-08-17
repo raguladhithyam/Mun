@@ -955,7 +955,7 @@ async function saveRegistration() {
             showLoaderOnConfirm: true,
             preConfirm: async (accessKey) => {
                 try {
-                    const verifyResponse = await axios.post('/api/admin/stats', { accessKey });
+                    const verifyResponse = await axios.post('/api/admin/verify-access-key', { accessKey });
                     if (!verifyResponse.data.success) {
                         throw new Error(verifyResponse.data.message || 'Invalid access key');
                     }
@@ -1536,7 +1536,7 @@ async function deleteRegistration(id) {
             showLoaderOnConfirm: true,
             preConfirm: async (accessKey) => {
                 try {
-                    const verifyResponse = await axios.post('/api/admin/stats', { accessKey });
+                    const verifyResponse = await axios.post('/api/admin/verify-access-key', { accessKey });
                     if (!verifyResponse.data.success) {
                         throw new Error(verifyResponse.data.message || 'Invalid access key');
                     }
