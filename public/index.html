@@ -161,6 +161,35 @@
             letter-spacing: 0.5px;
         }
 
+        .apply-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #37c9ee;
+            color: #172d9d;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(55, 201, 238, 0.3);
+            border: 2px solid transparent;
+        }
+
+        .apply-btn:hover {
+            background: #ffffff;
+            color: #172d9d;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(55, 201, 238, 0.4);
+            border-color: #37c9ee;
+        }
+
+        .apply-btn i {
+            font-size: 1.1em;
+        }
+
         /* Footer Styles */
         .footer {
             background: #172d9d;
@@ -262,6 +291,12 @@
                 font-size: clamp(1rem, 4vw, 1.5rem);
             }
             
+            .apply-btn {
+                margin-top: 1.5rem;
+                padding: 0.875rem 1.75rem;
+                font-size: clamp(0.9rem, 3vw, 1.1rem);
+            }
+            
             .footer-content {
                 flex-direction: column;
                 text-align: center;
@@ -308,6 +343,10 @@
         <div class="left-section">
             <h1 class="event-title">KUMARAGURU MODEL UNITED NATIONS</h1>
             <p class="event-dates">26, 27 & 28 SEPTEMBER</p>
+            <a href="/form" class="apply-btn">
+                <i class="fas fa-paper-plane"></i>
+                Apply Now
+            </a>
         </div>
         
         <div class="right-section"></div>
