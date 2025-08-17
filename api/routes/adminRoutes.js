@@ -18,14 +18,15 @@ const router = express.Router();
 async function deleteRegistrationFiles(files) {
   if (!files || typeof files !== 'object') return;
   
-  const deletePromises = Object.values(files).map(async (fileUrl) => {
-    if (typeof fileUrl === 'string') {
+  const deletePromises = Object.entries(files).map(async ([key, fileUrl]) => {
+    if (typeof fileUrl === 'string' && fileUrl) {
       const publicId = getPublicIdFromUrl(fileUrl);
       if (publicId) {
         try {
           await deleteFromCloudinary(publicId);
+          console.log(`Deleted file ${key}:`, publicId);
         } catch (error) {
-          console.error('Error deleting file:', error);
+          console.error(`Error deleting file ${key}:`, error);
         }
       }
     }
@@ -241,13 +242,17 @@ router.delete('/registrations/:id', authenticateAdmin, async (req, res) => {
     }
 
     // Delete associated files from Cloudinary
-    if (registration.files) {
-      try {
-        await deleteRegistrationFiles(registration.files);
-      } catch (fileDeleteError) {
-        console.error('File deletion error:', fileDeleteError);
-        // Continue with registration deletion even if file deletion fails
-      }
+    const filesToDelete = {
+      idCardUrl: registration.idCardUrl,
+      munCertificatesUrl: registration.munCertificatesUrl,
+      chairingResumeUrl: registration.chairingResumeUrl
+    };
+    
+    try {
+      await deleteRegistrationFiles(filesToDelete);
+    } catch (fileDeleteError) {
+      console.error('File deletion error:', fileDeleteError);
+      // Continue with registration deletion even if file deletion fails
     }
 
     // Delete registration from Firestore
@@ -291,9 +296,12 @@ router.post('/registrations/bulk-action', authenticateAdmin, async (req, res) =>
           case 'delete':
             const registration = await getDocument(COLLECTIONS.REGISTRATIONS, id);
             if (registration) {
-              if (registration.files) {
-                await deleteRegistrationFiles(registration.files);
-              }
+              const filesToDelete = {
+                idCardUrl: registration.idCardUrl,
+                munCertificatesUrl: registration.munCertificatesUrl,
+                chairingResumeUrl: registration.chairingResumeUrl
+              };
+              await deleteRegistrationFiles(filesToDelete);
               await deleteDocument(COLLECTIONS.REGISTRATIONS, id);
               results.success++;
             } else {
