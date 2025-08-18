@@ -165,8 +165,50 @@
                         <!-- Recipients Section -->
                         <div class="form-group" id="recipientsGroup">
                             <label for="recipients">Recipients</label>
-                            <div class="custom-select">
-                                <select id="recipients" name="recipients" class="select-styled" multiple>
+                            <div class="custom-multi-select">
+                                <div class="select-display" id="recipientsDisplay">
+                                    <div class="selected-items" id="selectedRecipients">
+                                        <span class="placeholder">Select recipients...</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
+                                </div>
+                                <div class="select-dropdown" id="recipientsDropdown">
+                                    <div class="search-box">
+                                        <input type="text" id="recipientsSearch" placeholder="Search recipients...">
+                                        <i class="fas fa-search"></i>
+                                    </div>
+                                    <div class="options-list" id="recipientsOptions">
+                                        <div class="option-item" data-value="all">
+                                            <input type="checkbox" id="recipient-all">
+                                            <label for="recipient-all">All Registrants</label>
+                                        </div>
+                                        <div class="option-item" data-value="unsc">
+                                            <input type="checkbox" id="recipient-unsc">
+                                            <label for="recipient-unsc">UNSC Applicants</label>
+                                        </div>
+                                        <div class="option-item" data-value="unodc">
+                                            <input type="checkbox" id="recipient-unodc">
+                                            <label for="recipient-unodc">UNODC Applicants</label>
+                                        </div>
+                                        <div class="option-item" data-value="lok_sabha">
+                                            <input type="checkbox" id="recipient-lok_sabha">
+                                            <label for="recipient-lok_sabha">Lok Sabha Applicants</label>
+                                        </div>
+                                        <div class="option-item" data-value="ccc">
+                                            <input type="checkbox" id="recipient-ccc">
+                                            <label for="recipient-ccc">CCC Applicants</label>
+                                        </div>
+                                        <div class="option-item" data-value="ipc">
+                                            <input type="checkbox" id="recipient-ipc">
+                                            <label for="recipient-ipc">IPC Applicants</label>
+                                        </div>
+                                        <div class="option-item" data-value="disec">
+                                            <input type="checkbox" id="recipient-disec">
+                                            <label for="recipient-disec">DISEC Applicants</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <select id="recipients" name="recipients" multiple style="display: none;">
                                     <option value="all">All Registrants</option>
                                     <option value="unsc">UNSC Applicants</option>
                                     <option value="unodc">UNODC Applicants</option>
@@ -175,7 +217,6 @@
                                     <option value="ipc">IPC Applicants</option>
                                     <option value="disec">DISEC Applicants</option>
                                 </select>
-                                <i class="fas fa-chevron-down select-arrow"></i>
                             </div>
                         </div>
                         

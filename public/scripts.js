@@ -195,6 +195,11 @@ function initializeEventListeners() {
         elements.previewBtn.addEventListener('click', handlePreview);
     }
     
+    // Initialize custom multi-select dropdown
+    if (document.getElementById('recipientsDisplay')) {
+        initializeCustomMultiSelect();
+    }
+    
     // Table action buttons event delegation
     const registrationsTable = document.getElementById('registrationsTable');
     if (registrationsTable) {
@@ -646,7 +651,7 @@ function handlePreview() {
         }
         recipients = singleEmail;
     } else {
-        const selectedRecipients = Array.from(document.querySelectorAll('#recipients option:checked')).map(opt => opt.text);
+        const selectedRecipients = Array.from(document.querySelectorAll('#recipients option:checked')).map(opt => opt.value);
         if (selectedRecipients.length === 0) {
             showError('Please select at least one recipient group.');
             return;
@@ -846,6 +851,9 @@ async function handleMailerSubmission(event) {
         if (response.data.success) {
             showSuccess('Email sent successfully!');
             elements.mailerForm.reset();
+            
+            // Reset custom dropdown
+            resetCustomDropdown();
             
             // Reset to first tab
             const firstTab = document.querySelector('.mailer-tab-btn');
@@ -1522,4 +1530,182 @@ async function deleteRegistration(id) {
             confirmButtonText: 'OK'
         });
     }
+}
+
+// Custom Multi-Select Dropdown Functionality
+function initializeCustomMultiSelect() {
+    const selectDisplay = document.getElementById('recipientsDisplay');
+    const selectDropdown = document.getElementById('recipientsDropdown');
+    const selectedItems = document.getElementById('selectedRecipients');
+    const searchInput = document.getElementById('recipientsSearch');
+    const optionsList = document.getElementById('recipientsOptions');
+    const hiddenSelect = document.getElementById('recipients');
+    
+    let selectedValues = new Set();
+    
+    // Toggle dropdown
+    selectDisplay.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isActive = selectDropdown.classList.contains('active');
+        
+        if (isActive) {
+            closeDropdown();
+        } else {
+            openDropdown();
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!selectDisplay.contains(e.target) && !selectDropdown.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+    
+    // Search functionality
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const optionItems = optionsList.querySelectorAll('.option-item');
+        
+        optionItems.forEach(item => {
+            const label = item.querySelector('label').textContent.toLowerCase();
+            if (label.includes(searchTerm)) {
+                item.classList.remove('hidden');
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+    });
+    
+    // Handle option selection
+    optionsList.addEventListener('change', (e) => {
+        if (e.target.type === 'checkbox') {
+            const optionItem = e.target.closest('.option-item');
+            const value = optionItem.dataset.value;
+            const label = optionItem.querySelector('label').textContent;
+            
+            if (e.target.checked) {
+                selectedValues.add(value);
+                optionItem.classList.add('selected');
+                addChip(value, label);
+            } else {
+                selectedValues.delete(value);
+                optionItem.classList.remove('selected');
+                removeChip(value);
+            }
+            
+            updateHiddenSelect();
+        }
+    });
+    
+    // Handle option item click (for better UX)
+    optionsList.addEventListener('click', (e) => {
+        const optionItem = e.target.closest('.option-item');
+        if (optionItem && !e.target.matches('input[type="checkbox"]')) {
+            const checkbox = optionItem.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    function openDropdown() {
+        selectDropdown.classList.add('active');
+        selectDisplay.classList.add('active');
+        searchInput.focus();
+    }
+    
+    function closeDropdown() {
+        selectDropdown.classList.remove('active');
+        selectDisplay.classList.remove('active');
+        searchInput.value = '';
+        // Reset search
+        optionsList.querySelectorAll('.option-item').forEach(item => {
+            item.classList.remove('hidden');
+        });
+    }
+    
+    function addChip(value, label) {
+        const existingChip = selectedItems.querySelector(`[data-value="${value}"]`);
+        if (existingChip) return;
+        
+        const chip = document.createElement('span');
+        chip.className = 'selected-chip';
+        chip.dataset.value = value;
+        chip.innerHTML = `
+            ${label}
+            <span class="remove-chip" onclick="removeChipFromDropdown('${value}')">
+                <i class="fas fa-times"></i>
+            </span>
+        `;
+        
+        // Remove placeholder if it exists
+        const placeholder = selectedItems.querySelector('.placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+        
+        selectedItems.appendChild(chip);
+    }
+    
+    function removeChip(value) {
+        const chip = selectedItems.querySelector(`[data-value="${value}"]`);
+        if (chip) {
+            chip.remove();
+        }
+        
+        // Add placeholder if no chips left
+        if (selectedValues.size === 0) {
+            const placeholder = document.createElement('span');
+            placeholder.className = 'placeholder';
+            placeholder.textContent = 'Select recipients...';
+            selectedItems.appendChild(placeholder);
+        }
+    }
+    
+    function updateHiddenSelect() {
+        // Clear existing options
+        hiddenSelect.innerHTML = '';
+        
+        // Add selected values
+        selectedValues.forEach(value => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.selected = true;
+            hiddenSelect.appendChild(option);
+        });
+    }
+    
+    // Global function for removing chips (accessible from HTML)
+    window.removeChipFromDropdown = function(value) {
+        const checkbox = document.querySelector(`#recipientsOptions .option-item[data-value="${value}"] input[type="checkbox"]`);
+        if (checkbox) {
+            checkbox.checked = false;
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    };
+    
+    // Global function to reset the custom dropdown
+    window.resetCustomDropdown = function() {
+        // Clear all selected values
+        selectedValues.clear();
+        
+        // Uncheck all checkboxes
+        optionsList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        // Remove selected class from all options
+        optionsList.querySelectorAll('.option-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Clear chips and add placeholder
+        selectedItems.innerHTML = '<span class="placeholder">Select recipients...</span>';
+        
+        // Update hidden select
+        updateHiddenSelect();
+        
+        // Close dropdown if open
+        closeDropdown();
+    };
 }
