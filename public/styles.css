@@ -1296,3 +1296,216 @@ tr:hover {
         border-bottom: 3px solid var(--accent-1);
     }
 }
+
+/* Custom Multi-Select Styles */
+.custom-multi-select {
+    position: relative;
+    width: 100%;
+}
+
+.select-display {
+    position: relative;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    padding-right: 2.5rem;
+    border: 2px solid var(--border);
+    border-radius: var(--border-radius);
+    background: var(--background);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.select-display:hover {
+    border-color: var(--accent-1);
+}
+
+.select-display.active {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(121, 125, 250, 0.1);
+}
+
+.selected-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex: 1;
+    min-height: 20px;
+}
+
+.placeholder {
+    color: var(--text-light);
+    font-style: italic;
+}
+
+.selected-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--accent-1);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    animation: chipAppear 0.2s ease-out;
+}
+
+.selected-chip .remove-chip {
+    cursor: pointer;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    transition: var(--transition);
+}
+
+.selected-chip .remove-chip:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+@keyframes chipAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.select-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--background);
+    border: 2px solid var(--accent-1);
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    max-height: 300px;
+    overflow: hidden;
+    display: none;
+    animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.select-dropdown.active {
+    display: block;
+}
+
+.search-box {
+    position: relative;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    padding-left: 2.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    background: var(--background);
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 2px rgba(121, 125, 250, 0.1);
+}
+
+.search-box i {
+    position: absolute;
+    left: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.options-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.option-item:hover {
+    background: var(--hover-bg);
+}
+
+.option-item:last-child {
+    border-bottom: none;
+}
+
+.option-item.hidden {
+    display: none;
+}
+
+.option-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-1);
+    cursor: pointer;
+}
+
+.option-item label {
+    flex: 1;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text);
+    user-select: none;
+}
+
+.option-item.selected {
+    background: rgba(121, 125, 250, 0.1);
+}
+
+.option-item.selected label {
+    color: var(--accent-1);
+    font-weight: 600;
+}
+
+/* Scrollbar styling for options list */
+.options-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.options-list::-webkit-scrollbar-track {
+    background: var(--border-light);
+}
+
+.options-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.options-list::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-1);
+}
