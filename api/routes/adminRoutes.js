@@ -41,6 +41,81 @@ const authenticateAdmin = (req, res, next) => {
   next();
 };
 
+// Test route to verify admin routes are working
+router.get('/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Admin routes are working',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Route to serve files with authentication - placed early to avoid conflicts
+router.get('/file/*', async (req, res) => {
+  try {
+    console.log('[File Route] Request received:', {
+      url: req.url,
+      originalUrl: req.originalUrl,
+      path: req.path,
+      params: req.params
+    });
+    
+    // Get the full path after /file/
+    const filePath = req.params[0];
+    if (!filePath) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file path provided'
+      });
+    }
+    
+    // Decode the URL parameter
+    const decodedUrl = decodeURIComponent(filePath);
+    console.log('[File Route] Decoded URL:', decodedUrl);
+    
+    // Extract public ID from the Cloudinary URL
+    const publicId = getPublicIdFromUrl(decodedUrl);
+    console.log('[File Route] Extracted public ID:', publicId);
+    
+    if (!publicId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file URL - could not extract public ID'
+      });
+    }
+    
+    // Try to generate a signed URL for secure access
+    let finalUrl = null;
+    
+    try {
+      const signedUrl = generateSignedUrl(publicId, 'raw');
+      console.log('[File Route] Generated signed URL:', signedUrl);
+      
+      if (signedUrl) {
+        finalUrl = signedUrl;
+      }
+    } catch (signError) {
+      console.log('[File Route] Failed to generate signed URL, using original URL:', signError.message);
+    }
+    
+    // If signed URL failed, try to use the original URL directly
+    if (!finalUrl) {
+      console.log('[File Route] Using original URL as fallback');
+      finalUrl = decodedUrl;
+    }
+    
+    // Redirect to the final URL
+    res.redirect(finalUrl);
+    
+  } catch (error) {
+    console.error('[File Route] Error serving file:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error accessing file: ' + error.message
+    });
+  }
+});
+
 // Get dashboard statistics
 router.get('/stats', authenticateAdmin, async (req, res) => {
   try {
@@ -426,45 +501,7 @@ router.get('/export', authenticateAdmin, async (req, res) => {
   }
 });
 
-// New route to serve files with authentication
-router.get('/file/:fileUrl', async (req, res) => {
-  try {
-    const { fileUrl } = req.params;
-    
-    // Decode the URL parameter
-    const decodedUrl = decodeURIComponent(fileUrl);
-    
-    // Extract public ID from the Cloudinary URL
-    const publicId = getPublicIdFromUrl(decodedUrl);
-    
-    if (!publicId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid file URL'
-      });
-    }
-    
-    // Generate a signed URL for secure access
-    const signedUrl = generateSignedUrl(publicId, 'raw');
-    
-    if (!signedUrl) {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to generate secure file URL'
-      });
-    }
-    
-    // Redirect to the signed URL
-    res.redirect(signedUrl);
-    
-  } catch (error) {
-    console.error('Error serving file:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error accessing file'
-    });
-  }
-});
+
 
 // Helper function to convert JSON to CSV
 function convertToCSV(data) {
