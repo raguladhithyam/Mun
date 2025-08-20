@@ -932,10 +932,13 @@ function hideFileLinksModal() {
 
 // Function to open files in new tab
 function openFileInNewTab(url, fileName) {
+    // Decode the URL since we encoded it in the onclick handler
+    const decodedUrl = decodeURIComponent(url);
+    
     // For PDF files, try to open in a new tab
-    if (url.includes('.pdf') || url.includes('cloudinary.com')) {
+    if (decodedUrl.includes('.pdf') || decodedUrl.includes('cloudinary.com')) {
         // Create a new window/tab with the file
-        const newWindow = window.open(url, '_blank');
+        const newWindow = window.open(decodedUrl, '_blank');
         
         // If the window was blocked, show a message
         if (!newWindow) {
@@ -943,7 +946,7 @@ function openFileInNewTab(url, fileName) {
         }
     } else {
         // For other file types, use the default behavior
-        window.open(url, '_blank');
+        window.open(decodedUrl, '_blank');
     }
 }
 
@@ -1164,11 +1167,10 @@ function generateRegistrationDetailsHTML(registration) {
     // Helper function to convert Cloudinary raw URLs to viewer URLs
     const getViewerUrl = (url) => {
         if (!url) return url;
-        // Convert Cloudinary raw upload URL to inline viewer URL
+        // For Cloudinary URLs, remove any fl_attachment parameter to allow inline viewing
         if (url.includes('cloudinary.com') && url.includes('/raw/upload/')) {
-            // Add fl_attachment parameter to force inline viewing instead of download
-            const separator = url.includes('?') ? '&' : '?';
-            return url + separator + 'fl_attachment';
+            // Remove fl_attachment parameter if it exists to prevent forced download
+            return url.replace(/[?&]fl_attachment[^&]*/g, '');
         }
         return url;
     };
@@ -1321,7 +1323,7 @@ function generateRegistrationDetailsHTML(registration) {
                                 <i class="${file.icon}"></i>
                                 <h5>${file.name}</h5>
                             </div>
-                            <a href="${file.url}" target="_blank" class="file-link-url" onclick="openFileInNewTab('${file.url}', '${file.name}')">
+                            <a href="${file.url}" target="_blank" class="file-link-url" onclick="openFileInNewTab('${encodeURIComponent(file.url)}', '${file.name.replace(/'/g, "\\'")}')">
                                 ${file.url}
                             </a>
                         </div>
