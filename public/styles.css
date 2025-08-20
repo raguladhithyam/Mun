@@ -50,15 +50,17 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    padding: 1rem 0;
+    width: 100%;
+    margin: 0;
 }
 
 .logo {
     display: flex;
     align-items: center;
     gap: 1rem;
+    padding-left: 0;
+    margin-left: 0;
 }
 
 .logo-image {
@@ -86,6 +88,8 @@ body {
     display: flex;
     align-items: center;
     gap: 1rem;
+    padding-right: 0;
+    margin-right: 0;
 }
 
 .header-actions .btn {
@@ -737,6 +741,31 @@ tr:hover {
     background: rgba(121, 125, 250, 0.05);
 }
 
+/* Status Badge Styles */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
 /* Mailer Form */
 .mailer-form {
     max-width: 800px;
@@ -1127,7 +1156,7 @@ tr:hover {
 /* Responsive Design */
 @media (max-width: 768px) {
     .header-content {
-        padding: 1rem;
+        padding: 1rem 0;
         flex-direction: column;
         gap: 1rem;
     }
@@ -1136,6 +1165,8 @@ tr:hover {
         flex-direction: column;
         text-align: center;
         gap: 0.5rem;
+        padding-left: 0;
+        margin-left: 0;
     }
     
     .logo-image {

@@ -509,12 +509,17 @@ function updateRegistrationsTable(registrations) {
     tbody.innerHTML = '';
     
     if (registrations.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No registrations found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center">No registrations found</td></tr>';
         return;
     }
     
     registrations.forEach(reg => {
         const row = document.createElement('tr');
+        // Get status with proper styling
+        const status = reg.status || 'pending';
+        const statusClass = status === 'approved' ? 'status-approved' : 
+                           status === 'rejected' ? 'status-rejected' : 'status-pending';
+        
         row.innerHTML = `
             <td>${reg.name || 'N/A'}</td>
             <td>${reg.email || 'N/A'}</td>
@@ -523,6 +528,7 @@ function updateRegistrationsTable(registrations) {
             <td>${Array.isArray(reg.committees) ? reg.committees.join(', ') : 'N/A'}</td>
             <td>${Array.isArray(reg.positions) ? reg.positions.join(', ') : 'N/A'}</td>
             <td>${reg.submittedAt ? new Date(reg.submittedAt).toLocaleDateString() : 'N/A'}</td>
+            <td><span class="status-badge ${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
             <td>
                 <button class="btn btn-outline view-btn" data-registration-id="${reg.id}">
                     <i class="fas fa-eye"></i>
@@ -915,11 +921,30 @@ function showSuccessModal() {
 
 function hideSuccessModal() {
     elements.successModal.style.display = 'none';
+    // Redirect to home page
+    window.location.href = '/';
 }
 
 function hideFileLinksModal() {
     elements.fileLinksModal.style.display = 'none';
     currentRegistration = null;
+}
+
+// Function to open files in new tab
+function openFileInNewTab(url, fileName) {
+    // For PDF files, try to open in a new tab
+    if (url.includes('.pdf') || url.includes('cloudinary.com')) {
+        // Create a new window/tab with the file
+        const newWindow = window.open(url, '_blank');
+        
+        // If the window was blocked, show a message
+        if (!newWindow) {
+            showError('Popup blocked. Please allow popups for this site and try again.');
+        }
+    } else {
+        // For other file types, use the default behavior
+        window.open(url, '_blank');
+    }
 }
 
 // Show view mode
@@ -1136,10 +1161,22 @@ function generateRegistrationDetailsHTML(registration) {
     // Generate file links
     const fileLinks = [];
     
+    // Helper function to convert Cloudinary raw URLs to viewer URLs
+    const getViewerUrl = (url) => {
+        if (!url) return url;
+        // Convert Cloudinary raw upload URL to inline viewer URL
+        if (url.includes('cloudinary.com') && url.includes('/raw/upload/')) {
+            // Add fl_attachment parameter to force inline viewing instead of download
+            const separator = url.includes('?') ? '&' : '?';
+            return url + separator + 'fl_attachment';
+        }
+        return url;
+    };
+    
     if (registration.idCardUrl) {
         fileLinks.push({
             name: 'ID Card',
-            url: registration.idCardUrl,
+            url: getViewerUrl(registration.idCardUrl),
             icon: 'fas fa-id-card'
         });
     }
@@ -1147,7 +1184,7 @@ function generateRegistrationDetailsHTML(registration) {
     if (registration.munCertificatesUrl) {
         fileLinks.push({
             name: 'MUN Certificates',
-            url: registration.munCertificatesUrl,
+            url: getViewerUrl(registration.munCertificatesUrl),
             icon: 'fas fa-certificate'
         });
     }
@@ -1155,7 +1192,7 @@ function generateRegistrationDetailsHTML(registration) {
     if (registration.chairingResumeUrl) {
         fileLinks.push({
             name: 'Chairing Resume',
-            url: registration.chairingResumeUrl,
+            url: getViewerUrl(registration.chairingResumeUrl),
             icon: 'fas fa-file-alt'
         });
     }
@@ -1167,7 +1204,7 @@ function generateRegistrationDetailsHTML(registration) {
                 const name = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
                 fileLinks.push({
                     name: name,
-                    url: url,
+                    url: getViewerUrl(url),
                     icon: 'fas fa-file'
                 });
             }
@@ -1284,7 +1321,7 @@ function generateRegistrationDetailsHTML(registration) {
                                 <i class="${file.icon}"></i>
                                 <h5>${file.name}</h5>
                             </div>
-                            <a href="${file.url}" target="_blank" class="file-link-url">
+                            <a href="${file.url}" target="_blank" class="file-link-url" onclick="openFileInNewTab('${file.url}', '${file.name}')">
                                 ${file.url}
                             </a>
                         </div>
