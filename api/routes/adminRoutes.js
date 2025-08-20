@@ -9,9 +9,6 @@ const {
 } = require('../utils/firebase');
 const { deleteFromCloudinary, getPublicIdFromUrl, generateSignedUrl } = require('../utils/cloudinaryUploader');
 
-// Secure access key (in production, store this securely)
-const SECURE_ACCESS_KEY = process.env.ADMIN_SECURE_ACCESS_KEY;
-
 const router = express.Router();
 
 // Helper function to delete registration files

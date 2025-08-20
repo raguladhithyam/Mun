@@ -25,7 +25,7 @@ async function uploadToCloudinary(fileBuffer, fileName, contentType) {
     // Upload to Cloudinary
     const uploadResult = await cloudinary.uploader.upload(dataURI, {
       public_id: `pdf_form_uploads/${Date.now()}_${fileName}`,
-      resource_type: 'auto',
+      resource_type: 'raw',
       folder: 'pdf_form_uploads',
       use_filename: true,
       unique_filename: true,
