@@ -1,6 +1,34 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
 const { getCollection, getDocument, COLLECTIONS } = require('../utils/firebase');
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit per file
+    files: 5 // Maximum 5 files
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow only specific file types
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'text/plain'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only PDF, DOC, DOCX, JPG, PNG, and TXT files are allowed.'), false);
+    }
+  }
+});
 
 const router = express.Router();
 
@@ -117,7 +145,7 @@ function replaceTemplateVariables(template, variables) {
 }
 
 // Send email to individual or multiple recipients
-router.post('/send-mail', authenticateAdmin, async (req, res) => {
+router.post('/send-mail', authenticateAdmin, upload.array('attachments', 5), async (req, res) => {
   try {
     const {
       recipients,
@@ -129,6 +157,21 @@ router.post('/send-mail', authenticateAdmin, async (req, res) => {
       bcc = []
     } = req.body;
 
+    // Parse recipients from JSON string if needed
+    let parsedRecipients = recipients;
+    if (typeof recipients === 'string') {
+      try {
+        parsedRecipients = JSON.parse(recipients);
+      } catch (e) {
+        // If parsing fails, treat as single email
+        parsedRecipients = [recipients];
+      }
+    }
+
+    // Handle file attachments
+    const attachments = req.files || [];
+    console.log(`Received ${attachments.length} attachments`);
+
     // Debug logging
     console.log('Received mail request:', {
       recipients,
@@ -139,11 +182,11 @@ router.post('/send-mail', authenticateAdmin, async (req, res) => {
     });
 
     // Validation
-    if (!recipients || (Array.isArray(recipients) && recipients.length === 0)) {
+    if (!parsedRecipients || (Array.isArray(parsedRecipients) && parsedRecipients.length === 0)) {
       return res.status(400).json({
         success: false,
         message: 'Recipients are required',
-        debug: { receivedRecipients: recipients, type: typeof recipients }
+        debug: { receivedRecipients: parsedRecipients, type: typeof parsedRecipients }
       });
     }
 
@@ -157,34 +200,24 @@ router.post('/send-mail', authenticateAdmin, async (req, res) => {
     // Get recipient emails
     let recipientEmails = [];
     
-    // Parse recipients - now always array or string
-    let recipientsArray;
-    if (Array.isArray(recipients)) {
-      recipientsArray = recipients;
-    } else if (typeof recipients === 'string') {
-      recipientsArray = [recipients];
-    } else {
-      recipientsArray = [recipients];
-    }
+    console.log('Parsed recipients:', parsedRecipients);
     
-    console.log('Parsed recipients:', recipientsArray);
-    
-    if (recipientsArray.includes('all')) {
+    if (parsedRecipients.includes('all')) {
       // Get all registrant emails
       const registrations = await getCollection(COLLECTIONS.REGISTRATIONS, 'submittedAt', 'desc');
       recipientEmails = registrations.map(reg => reg.email);
     } else {
       // Check if it's a single email (not a committee code)
-      const isSingleEmail = recipientsArray.length === 1 && recipientsArray[0].includes('@');
+      const isSingleEmail = parsedRecipients.length === 1 && parsedRecipients[0].includes('@');
       
       if (isSingleEmail) {
         // Single email recipient
-        recipientEmails = recipientsArray;
+        recipientEmails = parsedRecipients;
       } else {
         // Handle committee-specific recipients
         const registrations = await getCollection(COLLECTIONS.REGISTRATIONS, 'submittedAt', 'desc');
         
-        recipientsArray.forEach(committee => {
+        parsedRecipients.forEach(committee => {
           const committeeRegistrations = registrations.filter(reg => 
             Array.isArray(reg.committees) && reg.committees.includes(committee.toUpperCase())
           );
@@ -261,6 +294,15 @@ router.post('/send-mail', authenticateAdmin, async (req, res) => {
           subject: emailSubject,
           html: emailHtml
         };
+
+        // Add attachments if any
+        if (attachments.length > 0) {
+          mailOptions.attachments = attachments.map(file => ({
+            filename: file.originalname,
+            content: file.buffer,
+            contentType: file.mimetype
+          }));
+        }
 
         await transporter.sendMail(mailOptions);
         results.sent++;

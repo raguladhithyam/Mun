@@ -833,6 +833,12 @@ async function handleMailerSubmission(event) {
         requestData.message = message;
         requestData.smtpProvider = emailProvider;
         
+        // Handle attachments
+        const attachmentFiles = document.getElementById('attachments')?.files;
+        if (attachmentFiles && attachmentFiles.length > 0) {
+            requestData.attachments = attachmentFiles;
+        }
+        
         // Debug logging
         console.log('Sending mail request:', {
             recipientType,
@@ -842,15 +848,37 @@ async function handleMailerSubmission(event) {
             message: message ? 'Message provided' : 'No message'
         });
         
-        const response = await axios.post('/api/admin/send-mail', requestData, {
+        // Create FormData for file uploads
+        const formData = new FormData();
+        
+        // Add basic form data
+        formData.append('recipients', JSON.stringify(requestData.recipients));
+        formData.append('subject', requestData.subject);
+        formData.append('message', requestData.message);
+        formData.append('smtpProvider', requestData.smtpProvider);
+        
+        // Add attachments if any
+        if (requestData.attachments) {
+            for (let i = 0; i < requestData.attachments.length; i++) {
+                formData.append('attachments', requestData.attachments[i]);
+            }
+        }
+        
+        const response = await axios.post('/api/admin/send-mail', formData, {
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'multipart/form-data'
             }
         });
         
         if (response.data.success) {
             showSuccess('Email sent successfully!');
             elements.mailerForm.reset();
+            
+            // Reset file list
+            const fileList = document.getElementById('fileList');
+            if (fileList) {
+                fileList.innerHTML = '';
+            }
             
             // Reset custom dropdown
             resetCustomDropdown();
@@ -1256,7 +1284,7 @@ function generateRegistrationDetailsHTML(registration) {
                                 <i class="${file.icon}"></i>
                                 <h5>${file.name}</h5>
                             </div>
-                            <a href="/api/admin/file/${encodeURIComponent(file.url)}" target="_blank" class="file-link-url">
+                            <a href="${file.url}" target="_blank" class="file-link-url">
                                 ${file.url}
                             </a>
                         </div>
@@ -1708,4 +1736,153 @@ function initializeCustomMultiSelect() {
         // Close dropdown if open
         closeDropdown();
     };
+}
+
+// File Upload Handling for Mailer
+document.addEventListener('DOMContentLoaded', function() {
+    const attachmentInput = document.getElementById('attachments');
+    const fileList = document.getElementById('fileList');
+    
+    if (attachmentInput && fileList) {
+        // Handle file selection
+        attachmentInput.addEventListener('change', handleFileSelection);
+        
+        // Handle drag and drop
+        const fileInputWrapper = attachmentInput.closest('.file-input-wrapper');
+        if (fileInputWrapper) {
+            fileInputWrapper.addEventListener('dragover', handleDragOver);
+            fileInputWrapper.addEventListener('drop', handleDrop);
+            fileInputWrapper.addEventListener('dragleave', handleDragLeave);
+        }
+    }
+});
+
+function handleFileSelection(event) {
+    const files = Array.from(event.target.files);
+    displaySelectedFiles(files);
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.style.borderColor = 'var(--accent-1)';
+    event.currentTarget.style.background = 'rgba(121, 125, 250, 0.05)';
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer.files);
+    const attachmentInput = document.getElementById('attachments');
+    
+    // Filter files by accepted types
+    const acceptedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.txt'];
+    const filteredFiles = files.filter(file => {
+        const extension = '.' + file.name.split('.').pop().toLowerCase();
+        return acceptedTypes.includes(extension);
+    });
+    
+    // Add files to input
+    const dataTransfer = new DataTransfer();
+    const existingFiles = Array.from(attachmentInput.files);
+    const allFiles = [...existingFiles, ...filteredFiles];
+    
+    // Limit to 5 files
+    const limitedFiles = allFiles.slice(0, 5);
+    
+    limitedFiles.forEach(file => dataTransfer.items.add(file));
+    attachmentInput.files = dataTransfer.files;
+    
+    displaySelectedFiles(limitedFiles);
+    
+    // Reset drag styling
+    event.currentTarget.style.borderColor = '';
+    event.currentTarget.style.background = '';
+}
+
+function handleDragLeave(event) {
+    event.preventDefault();
+    event.currentTarget.style.borderColor = '';
+    event.currentTarget.style.background = '';
+}
+
+function displaySelectedFiles(files) {
+    const fileList = document.getElementById('fileList');
+    if (!fileList) return;
+    
+    fileList.innerHTML = '';
+    
+    files.forEach((file, index) => {
+        const fileItem = createFileItem(file, index);
+        fileList.appendChild(fileItem);
+    });
+}
+
+function createFileItem(file, index) {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-item';
+    
+    const fileIcon = getFileIcon(file.name);
+    const fileSize = formatFileSize(file.size);
+    
+    fileItem.innerHTML = `
+        <div class="file-item-info">
+            <div class="file-item-icon">
+                <i class="${fileIcon}"></i>
+            </div>
+            <div class="file-item-details">
+                <div class="file-item-name">${file.name}</div>
+                <div class="file-item-size">${fileSize}</div>
+            </div>
+        </div>
+        <button type="button" class="file-item-remove" onclick="removeFile(${index})">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    return fileItem;
+}
+
+function getFileIcon(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    
+    switch (extension) {
+        case 'pdf':
+            return 'fas fa-file-pdf';
+        case 'doc':
+        case 'docx':
+            return 'fas fa-file-word';
+        case 'jpg':
+        case 'jpeg':
+        case 'png':
+            return 'fas fa-file-image';
+        case 'txt':
+            return 'fas fa-file-alt';
+        default:
+            return 'fas fa-file';
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function removeFile(index) {
+    const attachmentInput = document.getElementById('attachments');
+    const files = Array.from(attachmentInput.files);
+    
+    // Remove file at index
+    files.splice(index, 1);
+    
+    // Update input files
+    const dataTransfer = new DataTransfer();
+    files.forEach(file => dataTransfer.items.add(file));
+    attachmentInput.files = dataTransfer.files;
+    
+    // Update display
+    displaySelectedFiles(files);
 }

@@ -248,6 +248,24 @@
                             <textarea id="message" name="message" rows="10" required></textarea>
                         </div>
                         
+                        <!-- Attachments Section -->
+                        <div class="form-group">
+                            <label for="attachments">Attachments (Optional)</label>
+                            <div class="file-upload-container">
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="attachments" name="attachments" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt">
+                                    <div class="file-input-display">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>Choose files or drag here</span>
+                                        <small>Supported formats: PDF, DOC, DOCX, JPG, PNG, TXT (Max 5 files, 10MB each)</small>
+                                    </div>
+                                </div>
+                                <div class="file-list" id="fileList">
+                                    <!-- Selected files will be displayed here -->
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-paper-plane"></i>
