@@ -6,7 +6,7 @@ const crypto = require('crypto');
 let otpStore = new Map();
 
 // Email transporter
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.SMTP_USER_GMAIL,
