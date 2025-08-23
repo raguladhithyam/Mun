@@ -219,6 +219,12 @@ function initializeEventListeners() {
         initializeCustomMultiSelect();
     }
     
+    // Logout button - set up for admin page
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+    
     // Table action buttons event delegation
     const registrationsTable = document.getElementById('registrationsTable');
     if (registrationsTable) {
@@ -2244,23 +2250,34 @@ function removeFile(index) {
 
 // OTP Authentication Functions
 function initializeOTPAuth() {
+    console.log('Initializing OTP authentication...');
+    
     // Check if user is already authenticated
     const savedSession = localStorage.getItem('adminSession');
     if (savedSession) {
         try {
             otpSession = JSON.parse(savedSession);
             const now = new Date().getTime();
+            console.log('Session found, expires at:', new Date(otpSession.expiresAt));
+            console.log('Current time:', new Date(now));
+            
             if (otpSession.expiresAt > now) {
+                console.log('Session is valid, showing admin dashboard');
                 showAdminDashboard();
                 return;
             } else {
+                console.log('Session expired, removing from localStorage');
                 localStorage.removeItem('adminSession');
             }
         } catch (error) {
+            console.error('Error parsing session:', error);
             localStorage.removeItem('adminSession');
         }
+    } else {
+        console.log('No saved session found');
     }
     
+    console.log('Showing OTP login screen');
     showOTPLoginScreen();
 }
 
@@ -2278,6 +2295,8 @@ function showOTPLoginScreen() {
 }
 
 function showAdminDashboard() {
+    console.log('Showing admin dashboard...');
+    
     const otpScreen = document.getElementById('otpLoginScreen');
     const mainContent = document.querySelector('.main-content');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -2286,9 +2305,20 @@ function showAdminDashboard() {
     if (mainContent) mainContent.style.display = 'block';
     if (logoutBtn) logoutBtn.style.display = 'inline-flex';
     
+    // Set up logout button event listener
+    if (logoutBtn) {
+        console.log('Setting up logout button event listener');
+        // Remove existing listener to prevent duplicates
+        logoutBtn.removeEventListener('click', logout);
+        logoutBtn.addEventListener('click', logout);
+    }
+    
     // Load dashboard data if not already loaded
     if (!dashboardLoaded) {
+        console.log('Loading dashboard data...');
         loadDashboardData();
+    } else {
+        console.log('Dashboard already loaded');
     }
 }
 
@@ -2442,9 +2472,14 @@ async function verifyOTP() {
 }
 
 function logout() {
+    console.log('Logout function called');
+    
     // Clear session
     otpSession = null;
     localStorage.removeItem('adminSession');
+    
+    // Reset dashboard loaded flag
+    dashboardLoaded = false;
     
     // Show login screen
     showOTPLoginScreen();
@@ -2460,6 +2495,7 @@ function logout() {
     if (otpForm) otpForm.style.display = 'none';
     if (loginForm) loginForm.style.display = 'block';
     
+    console.log('Logout completed');
     showSuccess('Logged out successfully');
 }
 
