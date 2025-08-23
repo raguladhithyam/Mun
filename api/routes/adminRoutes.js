@@ -21,7 +21,6 @@ async function deleteRegistrationFiles(files) {
       if (publicId) {
         try {
           await deleteFromCloudinary(publicId);
-          console.log(`Deleted file ${key}:`, publicId);
         } catch (error) {
           console.error(`Error deleting file ${key}:`, error);
         }
@@ -50,12 +49,6 @@ router.get('/test', (req, res) => {
 // Route to serve files with authentication - placed early to avoid conflicts
 router.get('/file/*', async (req, res) => {
   try {
-    console.log('[File Route] Request received:', {
-      url: req.url,
-      originalUrl: req.originalUrl,
-      path: req.path,
-      params: req.params
-    });
     
     // Get the full path after /file/
     const filePath = req.params[0];
@@ -68,11 +61,9 @@ router.get('/file/*', async (req, res) => {
     
     // Decode the URL parameter
     const decodedUrl = decodeURIComponent(filePath);
-    console.log('[File Route] Decoded URL:', decodedUrl);
     
     // Extract public ID from the Cloudinary URL
     const publicId = getPublicIdFromUrl(decodedUrl);
-    console.log('[File Route] Extracted public ID:', publicId);
     
     if (!publicId) {
       return res.status(400).json({
@@ -86,18 +77,16 @@ router.get('/file/*', async (req, res) => {
     
     try {
       const signedUrl = generateSignedUrl(publicId, 'raw');
-      console.log('[File Route] Generated signed URL:', signedUrl);
       
       if (signedUrl) {
         finalUrl = signedUrl;
       }
     } catch (signError) {
-      console.log('[File Route] Failed to generate signed URL, using original URL:', signError.message);
+      // Failed to generate signed URL
     }
     
     // If signed URL failed, try to use the original URL directly
     if (!finalUrl) {
-      console.log('[File Route] Using original URL as fallback');
       finalUrl = decodedUrl;
     }
     
@@ -300,15 +289,6 @@ router.put('/registrations/:id', authenticateAdmin, async (req, res) => {
 
 // Delete registration
 router.delete('/registrations/:id', authenticateAdmin, async (req, res) => {
-  console.log('[AdminRoutes] DELETE registration request:', {
-    method: req.method,
-    url: req.url,
-    originalUrl: req.originalUrl,
-    params: req.params,
-    id: req.params.id,
-    path: req.path
-  });
-  
   try {
     const { id } = req.params;
 
@@ -523,13 +503,6 @@ function convertToCSV(data) {
 
 // Debug route to catch all admin requests
 router.use('*', (req, res) => {
-  console.log('[AdminRoutes] Unhandled request:', {
-    method: req.method,
-    url: req.url,
-    originalUrl: req.originalUrl,
-    path: req.path,
-    params: req.params
-  });
   res.status(404).json({
     success: false,
     message: 'Admin route not found'

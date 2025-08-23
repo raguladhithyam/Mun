@@ -170,16 +170,6 @@ router.post('/send-mail', authenticateAdmin, upload.array('attachments', 5), asy
 
     // Handle file attachments
     const attachments = req.files || [];
-    console.log(`Received ${attachments.length} attachments`);
-
-    // Debug logging
-    console.log('Received mail request:', {
-      recipients,
-      subject,
-      message: message ? 'Message provided' : 'No message',
-      smtpProvider,
-      bodyKeys: Object.keys(req.body)
-    });
 
     // Validation
     if (!parsedRecipients || (Array.isArray(parsedRecipients) && parsedRecipients.length === 0)) {
@@ -199,8 +189,6 @@ router.post('/send-mail', authenticateAdmin, upload.array('attachments', 5), asy
 
     // Get recipient emails
     let recipientEmails = [];
-    
-    console.log('Parsed recipients:', parsedRecipients);
     
     if (parsedRecipients.includes('all')) {
       // Get all registrant emails

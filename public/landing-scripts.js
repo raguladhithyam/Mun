@@ -1,7 +1,5 @@
 // Landing page JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Landing page loaded');
-    
     // Initialize page loader
     initializePageLoader();
     
@@ -380,5 +378,3 @@ const debouncedScrollHandler = debounce(function() {
 }, 16);
 
 window.addEventListener('scroll', debouncedScrollHandler);
-
-console.log('Landing page JavaScript initialized');

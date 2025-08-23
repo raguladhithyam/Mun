@@ -34,15 +34,6 @@ router.post('/', upload.fields([
   { name: 'chairingResume', maxCount: 1 }
 ]), async (req, res) => {
   try {
-        console.log('Form submission received');
-        console.log('Files:', req.files);
-        console.log('Body:', req.body);
-        console.log('Environment check:', {
-            hasFirebaseKey: !!process.env.FIREBASE_API_KEY,
-            hasCloudinaryCloudName: !!process.env.VITE_CLOUDINARY_CLOUD_NAME,
-            hasCloudinaryApiKey: !!process.env.VITE_CLOUDINARY_API_KEY,
-            hasCloudinaryApiSecret: !!process.env.VITE_CLOUDINARY_API_SECRET
-        });
 
     // Validate required fields
         const requiredFields = ['name', 'email', 'phone', 'college', 'department', 'year'];
@@ -95,7 +86,7 @@ router.post('/', upload.fields([
       });
     }
 
-        console.log('Starting file uploads...');
+
 
         // Upload files to Cloudinary
         const fileUrls = {};
@@ -107,11 +98,9 @@ router.post('/', upload.fields([
             // Remove file extension from originalname to prevent double extensions
             const originalNameWithoutExt = idCardFile.originalname.replace(/\.pdf$/i, '');
             const fileName = `${Date.now()}_id-card_${originalNameWithoutExt}`;
-            console.log('Uploading ID card:', fileName);
             uploadPromises.push(
                 uploadToCloudinary(idCardFile.buffer, fileName, idCardFile.mimetype)
                     .then(url => { 
-                        console.log('ID card uploaded successfully:', url);
                         fileUrls.idCardUrl = url; 
                     })
                     .catch(error => {
@@ -127,11 +116,9 @@ router.post('/', upload.fields([
             // Remove file extension from originalname to prevent double extensions
             const originalNameWithoutExt = certFile.originalname.replace(/\.pdf$/i, '');
             const fileName = `${Date.now()}_certificates_${originalNameWithoutExt}`;
-            console.log('Uploading MUN certificates:', fileName);
             uploadPromises.push(
                 uploadToCloudinary(certFile.buffer, fileName, certFile.mimetype)
                     .then(url => { 
-                        console.log('MUN certificates uploaded successfully:', url);
                         fileUrls.munCertificatesUrl = url; 
                     })
                     .catch(error => {
@@ -147,11 +134,9 @@ router.post('/', upload.fields([
             // Remove file extension from originalname to prevent double extensions
             const originalNameWithoutExt = resumeFile.originalname.replace(/\.pdf$/i, '');
             const fileName = `${Date.now()}_resume_${originalNameWithoutExt}`;
-            console.log('Uploading chairing resume:', fileName);
             uploadPromises.push(
                 uploadToCloudinary(resumeFile.buffer, fileName, resumeFile.mimetype)
                     .then(url => { 
-                        console.log('Chairing resume uploaded successfully:', url);
                         fileUrls.chairingResumeUrl = url; 
                     })
                     .catch(error => {
@@ -161,12 +146,8 @@ router.post('/', upload.fields([
             );
         }
 
-        console.log('Waiting for all uploads to complete...');
-
         // Wait for all file uploads to complete
         await Promise.all(uploadPromises);
-
-        console.log('All uploads completed. File URLs:', fileUrls);
 
         // Prepare data for Firestore
         const formData = {
@@ -188,12 +169,8 @@ router.post('/', upload.fields([
             submittedAt: new Date().toISOString()
         };
 
-        console.log('Saving to Firestore:', formData);
-
         // Save to Firestore
         const docRef = await addDocument('registrations', formData);
-
-        console.log('Document saved with ID:', docRef.id);
 
         res.json({
       success: true,

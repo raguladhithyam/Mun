@@ -37,13 +37,11 @@ const COLLECTIONS = {
 // Helper functions
 async function addDocument(collectionName, data) {
     try {
-        console.log(`📝 Adding document to ${collectionName}:`, data);
         const docRef = await addDoc(collection(db, collectionName), {
             ...data,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         });
-        console.log(`✅ Document added with ID: ${docRef.id}`);
         return docRef;
     } catch (error) {
         console.error(`❌ Error adding document to ${collectionName}:`, error);
@@ -53,7 +51,6 @@ async function addDocument(collectionName, data) {
 
 async function getCollection(collectionName, orderByField = null, orderDirection = 'desc') {
     try {
-        console.log(`📊 Getting collection: ${collectionName}`);
         let q = collection(db, collectionName);
         
         if (orderByField) {
@@ -70,7 +67,6 @@ async function getCollection(collectionName, orderByField = null, orderDirection
             });
         });
       
-        console.log(`✅ Retrieved ${documents.length} documents from ${collectionName}`);
         return documents;
     } catch (error) {
         console.error(`❌ Error getting collection ${collectionName}:`, error);
@@ -80,18 +76,15 @@ async function getCollection(collectionName, orderByField = null, orderDirection
 
 async function getDocument(collectionName, docId) {
     try {
-        console.log(`📄 Getting document: ${collectionName}/${docId}`);
         const docRef = doc(db, collectionName, docId);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-            console.log(`✅ Document retrieved: ${docId}`);
             return {
                 id: docSnap.id,
                 ...docSnap.data()
             };
         } else {
-            console.log(`⚠️ Document not found: ${docId}`);
             return null;
         }
     } catch (error) {
@@ -102,13 +95,11 @@ async function getDocument(collectionName, docId) {
 
 async function updateDocument(collectionName, docId, data) {
     try {
-        console.log(`✏️ Updating document: ${collectionName}/${docId}`, data);
         const docRef = doc(db, collectionName, docId);
         await updateDoc(docRef, {
             ...data,
             updatedAt: serverTimestamp()
         });
-        console.log(`✅ Document updated: ${docId}`);
         return { id: docId };
     } catch (error) {
         console.error(`❌ Error updating document ${docId}:`, error);
@@ -118,10 +109,8 @@ async function updateDocument(collectionName, docId, data) {
 
 async function deleteDocument(collectionName, docId) {
     try {
-        console.log(`🗑️ Deleting document: ${collectionName}/${docId}`);
         const docRef = doc(db, collectionName, docId);
         await deleteDoc(docRef);
-        console.log(`✅ Document deleted: ${docId}`);
         return { id: docId };
     } catch (error) {
         console.error(`❌ Error deleting document ${docId}:`, error);
@@ -132,8 +121,6 @@ async function deleteDocument(collectionName, docId) {
 // Statistics helpers
 async function getRegistrationStats() {
     try {
-        console.log('📊 Getting registration statistics');
-        
         const registrations = await getCollection(COLLECTIONS.REGISTRATIONS, 'submittedAt', 'desc');
         
         const stats = {
@@ -189,7 +176,6 @@ async function getRegistrationStats() {
             }
         });
         
-        console.log('✅ Statistics retrieved');
         return stats;
     } catch (error) {
         console.error('❌ Error getting statistics:', error);

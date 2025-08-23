@@ -65,12 +65,8 @@ const elements = {
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Application initializing...');
-    console.log('Axios available:', typeof axios !== 'undefined');
-    
     // Prevent multiple initializations
     if (window.appInitialized) {
-        console.log('Application already initialized, skipping...');
         return;
     }
     window.appInitialized = true;
@@ -83,20 +79,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // Handle routing based on URL
 function handleRouting() {
     const path = window.location.pathname;
-    console.log('Routing to path:', path);
     
     if (path === '/admin') {
         // Admin page - load dashboard data
         if (elements.adminDashboard && !dashboardLoaded) {
-            console.log('Loading dashboard data from routing...');
             loadDashboardData();
         }
-    } else if (path === '/form') {
-        // Form page - no special handling needed
-        console.log('Application form page loaded');
-    } else {
-        // Landing page - no special handling needed
-        console.log('Landing page loaded');
     }
 }
 
@@ -105,7 +93,6 @@ function initializeEventListeners() {
     // Form submission
     if (elements.form) {
         elements.form.addEventListener('submit', handleFormSubmission);
-        console.log('Form submission listener added');
     }
     
     // Navigation - only add if element exists (for admin page)
@@ -268,7 +255,6 @@ function initializeEventListeners() {
 function initializeFileUploads() {
     const fileWrappers = document.querySelectorAll('.file-input-wrapper');
     if (fileWrappers.length === 0) {
-        console.log('No file upload elements found on this page');
         return;
     }
     
@@ -356,7 +342,6 @@ function validateFile(event) {
 // Form submission handler
 async function handleFormSubmission(event) {
     event.preventDefault();
-    console.log('Form submission started');
     
     try {
     showLoading();
@@ -393,16 +378,12 @@ async function handleFormSubmission(event) {
         formData.set('committees', JSON.stringify(committees));
         formData.set('positions', JSON.stringify(positions));
         
-        console.log('Submitting form data...');
-        
         // Submit form
         const response = await axios.post('/api/submit', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         });
-        
-        console.log('Form submission response:', response);
         
         if (response.data.success) {
         hideLoading();
@@ -440,13 +421,11 @@ async function handleFormSubmission(event) {
 async function loadDashboardData() {
     // Prevent multiple loads
     if (dashboardLoaded) {
-        console.log('Dashboard already loaded, skipping...');
         return;
     }
     
     // Set loading flag immediately to prevent concurrent calls
     dashboardLoaded = true;
-    console.log('Loading dashboard data...', new Date().toISOString());
     
     try {
         // Load statistics
@@ -461,8 +440,6 @@ async function loadDashboardData() {
             currentRegistrations = registrationsResponse.data.data;
             updateRegistrationsTable(currentRegistrations);
         }
-        
-        console.log('Dashboard data loaded successfully');
         
     } catch (error) {
         console.error('Dashboard data loading error:', error);
@@ -579,15 +556,10 @@ function updateRegistrationsTable(registrations) {
 // Page-specific initialization
 function initializePage() {
     const path = window.location.pathname;
-    console.log('Initializing page for path:', path);
     
     if (path === '/admin') {
         // Admin page - initialize OTP authentication
-        console.log('Initializing admin page with OTP authentication...');
         initializeOTPAuth();
-    } else if (path === '/form') {
-        // Form page specific initialization
-        console.log('Application form initialized');
     }
 }
 
@@ -870,14 +842,7 @@ async function handleMailerSubmission(event) {
             requestData.attachments = attachmentFiles;
         }
         
-        // Debug logging
-        console.log('Sending mail request:', {
-            recipientType,
-            recipients: recipientType === 'single' ? document.getElementById('singleEmail')?.value : Array.from(document.querySelectorAll('#recipients option:checked')).map(opt => opt.value),
-            emailProvider,
-            subject,
-            message: message ? 'Message provided' : 'No message'
-        });
+
         
         // Create FormData for file uploads
         const formData = new FormData();
@@ -957,13 +922,10 @@ function hideFileLinksModal() {
 
 // Helper function to get file extension with improved detection
 function getFileExtension(fileName, url) {
-    console.log('File type detection:', { fileName, url });
-    
     // First, try to get extension from the original filename
     if (fileName && fileName.includes('.')) {
         const extension = fileName.split('.').pop().toLowerCase();
         if (extension && extension.length <= 4) { // Valid file extensions are usually 1-4 characters
-            console.log('Detected extension from filename:', extension);
             return extension;
         }
     }
@@ -972,7 +934,6 @@ function getFileExtension(fileName, url) {
     if (url && url.includes('.')) {
         const urlExtension = url.split('.').pop().toLowerCase();
         if (urlExtension && urlExtension.length <= 4) {
-            console.log('Detected extension from URL:', urlExtension);
             return urlExtension;
         }
     }
@@ -983,29 +944,24 @@ function getFileExtension(fileName, url) {
         if (url.includes('/raw/upload/')) {
             // If the original filename suggests it's a PDF, return pdf
             if (fileName && fileName.toLowerCase().includes('.pdf')) {
-                console.log('Detected PDF from filename pattern');
                 return 'pdf';
             }
             // Check for common document names that are typically PDFs
             if (fileName && /(id.?card|mun.?certificates?|chairing.?resume|resume|certificate)/i.test(fileName)) {
-                console.log('Detected PDF from common document name pattern');
                 return 'pdf';
             }
             // If the original filename suggests it's an image, try to detect
             if (fileName && /\.(jpg|jpeg|png|gif)$/i.test(fileName)) {
                 const imgExtension = fileName.split('.').pop().toLowerCase();
-                console.log('Detected image extension from filename:', imgExtension);
                 return imgExtension;
             }
         }
         // Check if it's an image upload
-        else if (url.includes('/image/upload/')) {
-            console.log('Detected image upload from URL path');
+        else         if (url.includes('/image/upload/')) {
             return 'jpg'; // Default to jpg for image uploads
         }
     }
     
-    console.log('No extension detected, returning unknown');
     // Default fallback
     return 'unknown';
 }
@@ -1016,8 +972,6 @@ function viewFileInModal(url, fileName) {
     
     // Improved file type detection
     const fileExtension = getFileExtension(fileName, decodedUrl);
-    
-    console.log('Viewing file in modal:', { fileName, fileExtension, decodedUrl });
     
     const modal = document.getElementById('fileViewerModal');
     const title = document.getElementById('fileViewerTitle');
@@ -1037,8 +991,8 @@ function viewFileInModal(url, fileName) {
                     <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(decodedUrl)}&embedded=true" 
                             width="100%" height="100%" frameborder="0"
                             style="border: 1px solid #ddd;"
-                            onload="console.log('Google Docs viewer loaded successfully')" 
-                            onerror="console.log('Google Docs viewer failed to load')">
+                            onload="" 
+                            onerror="">
                         <p>Google Docs viewer not available. <a href="${decodedUrl}" target="_blank">Click here to open the PDF</a></p>
                     </iframe>
                 </div>
@@ -1097,7 +1051,6 @@ function hideFileViewerModal() {
 
 // Function to download file with proper filename
 function downloadFile(url, fileName) {
-    console.log('Downloading file:', { url, fileName });
     
     // Ensure the filename has the proper extension
     let downloadFileName = fileName;
@@ -1108,25 +1061,19 @@ function downloadFile(url, fileName) {
         }
     }
     
-    console.log('Final download filename:', downloadFileName);
-    
     // Try the blob download method first
     if (url.includes('cloudinary.com')) {
-        console.log('Attempting blob download for Cloudinary URL...');
-        
         // Add a timestamp to prevent caching issues
         const urlWithTimestamp = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
         
         fetch(urlWithTimestamp)
             .then(response => {
-                console.log('Fetch response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.blob();
             })
             .then(blob => {
-                console.log('Blob created, size:', blob.size);
                 // Create a blob URL
                 const blobUrl = window.URL.createObjectURL(blob);
                 
@@ -1144,12 +1091,9 @@ function downloadFile(url, fileName) {
                 setTimeout(() => {
                     window.URL.revokeObjectURL(blobUrl);
                 }, 1000);
-                
-                console.log('Blob download successful for:', downloadFileName);
             })
             .catch(error => {
                 console.error('Blob download failed:', error);
-                console.log('Falling back to direct download...');
                 // Fallback to direct download
                 const link = document.createElement('a');
                 link.href = url;
@@ -1158,7 +1102,6 @@ function downloadFile(url, fileName) {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                console.log('Direct download fallback initiated for:', downloadFileName);
             });
     } else {
         // For non-Cloudinary URLs, use direct download
@@ -1169,8 +1112,6 @@ function downloadFile(url, fileName) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        console.log('Direct download initiated for:', downloadFileName);
     }
 }
 
@@ -1487,7 +1428,6 @@ function generateRegistrationDetailsHTML(registration) {
             if (url.includes('.pdf') || url.includes('/raw/upload/')) {
                 // Don't add any parameters that might interfere with iframe loading
                 // The raw upload should work fine without additional parameters
-                console.log('Using clean URL for PDF viewing:', modifiedUrl);
             }
             
             // For images, ensure they're served as images
@@ -2250,34 +2190,24 @@ function removeFile(index) {
 
 // OTP Authentication Functions
 function initializeOTPAuth() {
-    console.log('Initializing OTP authentication...');
-    
     // Check if user is already authenticated
     const savedSession = localStorage.getItem('adminSession');
     if (savedSession) {
         try {
             otpSession = JSON.parse(savedSession);
             const now = new Date().getTime();
-            console.log('Session found, expires at:', new Date(otpSession.expiresAt));
-            console.log('Current time:', new Date(now));
             
             if (otpSession.expiresAt > now) {
-                console.log('Session is valid, showing admin dashboard');
                 showAdminDashboard();
                 return;
             } else {
-                console.log('Session expired, removing from localStorage');
                 localStorage.removeItem('adminSession');
             }
         } catch (error) {
-            console.error('Error parsing session:', error);
             localStorage.removeItem('adminSession');
         }
-    } else {
-        console.log('No saved session found');
     }
     
-    console.log('Showing OTP login screen');
     showOTPLoginScreen();
 }
 
@@ -2295,8 +2225,6 @@ function showOTPLoginScreen() {
 }
 
 function showAdminDashboard() {
-    console.log('Showing admin dashboard...');
-    
     const otpScreen = document.getElementById('otpLoginScreen');
     const mainContent = document.querySelector('.main-content');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -2307,7 +2235,6 @@ function showAdminDashboard() {
     
     // Set up logout button event listener
     if (logoutBtn) {
-        console.log('Setting up logout button event listener');
         // Remove existing listener to prevent duplicates
         logoutBtn.removeEventListener('click', logout);
         logoutBtn.addEventListener('click', logout);
@@ -2315,10 +2242,7 @@ function showAdminDashboard() {
     
     // Load dashboard data if not already loaded
     if (!dashboardLoaded) {
-        console.log('Loading dashboard data...');
         loadDashboardData();
-    } else {
-        console.log('Dashboard already loaded');
     }
 }
 
@@ -2472,8 +2396,6 @@ async function verifyOTP() {
 }
 
 function logout() {
-    console.log('Logout function called');
-    
     // Clear session
     otpSession = null;
     localStorage.removeItem('adminSession');
@@ -2495,7 +2417,6 @@ function logout() {
     if (otpForm) otpForm.style.display = 'none';
     if (loginForm) loginForm.style.display = 'block';
     
-    console.log('Logout completed');
     showSuccess('Logged out successfully');
 }
 

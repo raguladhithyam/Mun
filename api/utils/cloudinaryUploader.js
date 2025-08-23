@@ -10,13 +10,6 @@ cloudinary.config({
 // Upload file to Cloudinary
 async function uploadToCloudinary(fileBuffer, fileName, contentType) {
   try {
-    console.log(`Uploading file to Cloudinary: ${fileName}`);
-    console.log('Cloudinary Configuration:', {
-      cloudName: process.env.VITE_CLOUDINARY_CLOUD_NAME,
-      hasApiKey: !!process.env.VITE_CLOUDINARY_API_KEY,
-      hasApiSecret: !!process.env.VITE_CLOUDINARY_API_SECRET,
-      uploadPreset: process.env.VITE_CLOUDINARY_UPLOAD_PRESET
-    });
 
     // Convert buffer to base64 string
     const base64String = fileBuffer.toString('base64');
@@ -56,15 +49,6 @@ async function uploadToCloudinary(fileBuffer, fileName, contentType) {
     // Upload to Cloudinary
     const uploadResult = await cloudinary.uploader.upload(dataURI, uploadOptions);
 
-    console.log(`File uploaded successfully: ${fileName}`);
-    console.log('Upload result:', {
-      public_id: uploadResult.public_id,
-      secure_url: uploadResult.secure_url,
-      format: uploadResult.format,
-      bytes: uploadResult.bytes,
-      resource_type: uploadResult.resource_type
-    });
-
     // Return the secure URL
     return uploadResult.secure_url;
 
@@ -82,12 +66,7 @@ async function uploadToCloudinary(fileBuffer, fileName, contentType) {
 // Delete file from Cloudinary
 async function deleteFromCloudinary(publicId) {
   try {
-    console.log(`Deleting file from Cloudinary: ${publicId}`);
-    
     const deleteResult = await cloudinary.uploader.destroy(publicId);
-    
-    console.log(`File deleted successfully: ${publicId}`);
-    console.log('Delete result:', deleteResult);
     
     return true;
 

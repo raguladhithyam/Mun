@@ -37,11 +37,7 @@ module.exports = async (req, res) => {
         }
       }
       
-      console.log('[Registrations] DELETE request debug:', {
-        url: req.url,
-        urlParts: urlParts,
-        extractedId: id
-      });
+
       
       if (!id) {
         return res.status(400).json({
@@ -103,12 +99,7 @@ module.exports = async (req, res) => {
         }
       }
       
-      console.log('[Registrations] PUT request debug:', {
-        url: req.url,
-        urlParts: urlParts,
-        extractedId: id,
-        body: req.body
-      });
+
       
       if (!id) {
         return res.status(400).json({

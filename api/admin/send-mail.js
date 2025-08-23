@@ -83,7 +83,6 @@ module.exports = async (req, res) => {
 
       // Handle file attachments
       const attachments = req.files || [];
-      console.log(`Received ${attachments.length} attachments`);
 
           // Validate required fields
       if (!parsedRecipients || !subject || !message) {
@@ -206,8 +205,6 @@ KMUN'25 Team`;
 
         await transporter.sendMail(mailOptions);
         results.success++;
-        
-        console.log(`✅ Email sent to ${recipient.email}`);
       } catch (error) {
         results.failed++;
         results.errors.push(`Failed to send email to ${recipient.email}: ${error.message}`);

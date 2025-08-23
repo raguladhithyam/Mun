@@ -48,19 +48,9 @@ module.exports = async (req, res) => {
   }
 
   try {
-    console.log('Form submission received');
-    console.log('Content-Type:', req.headers['content-type']);
-            console.log('Environment check:', {
-          hasFirebaseKey: !!process.env.FIREBASE_API_KEY,
-          hasCloudinaryCloudName: !!process.env.VITE_CLOUDINARY_CLOUD_NAME,
-          hasCloudinaryApiKey: !!process.env.VITE_CLOUDINARY_API_KEY,
-          hasCloudinaryApiSecret: !!process.env.VITE_CLOUDINARY_API_SECRET,
-          cloudName: process.env.VITE_CLOUDINARY_CLOUD_NAME
-        });
     
     // Handle multipart form data
     if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
-      console.log('Processing multipart form data...');
       
       try {
         // Use multer to parse multipart form data
@@ -82,8 +72,7 @@ module.exports = async (req, res) => {
           });
         });
 
-        console.log('Files:', req.files);
-        console.log('Body:', req.body);
+
 
         // Validate required fields
         const requiredFields = ['name', 'email', 'phone', 'college', 'department', 'year'];
@@ -136,7 +125,7 @@ module.exports = async (req, res) => {
           });
         }
 
-        console.log('Starting file uploads...');
+
 
         // Upload files to Cloudinary
         const fileUrls = {};
@@ -148,11 +137,9 @@ module.exports = async (req, res) => {
           // Remove file extension from originalname to prevent double extensions
           const originalNameWithoutExt = idCardFile.originalname.replace(/\.pdf$/i, '');
           const fileName = `${Date.now()}_id-card_${originalNameWithoutExt}`;
-          console.log('Uploading ID card:', fileName);
           uploadPromises.push(
             uploadToCloudinary(idCardFile.buffer, fileName, idCardFile.mimetype)
               .then(url => { 
-                console.log('ID card uploaded successfully:', url);
                 fileUrls.idCardUrl = url; 
               })
               .catch(error => {
@@ -168,11 +155,9 @@ module.exports = async (req, res) => {
           // Remove file extension from originalname to prevent double extensions
           const originalNameWithoutExt = certFile.originalname.replace(/\.pdf$/i, '');
           const fileName = `${Date.now()}_certificates_${originalNameWithoutExt}`;
-          console.log('Uploading MUN certificates:', fileName);
           uploadPromises.push(
             uploadToCloudinary(certFile.buffer, fileName, certFile.mimetype)
               .then(url => { 
-                console.log('MUN certificates uploaded successfully:', url);
                 fileUrls.munCertificatesUrl = url; 
               })
               .catch(error => {
@@ -188,11 +173,9 @@ module.exports = async (req, res) => {
           // Remove file extension from originalname to prevent double extensions
           const originalNameWithoutExt = resumeFile.originalname.replace(/\.pdf$/i, '');
           const fileName = `${Date.now()}_resume_${originalNameWithoutExt}`;
-          console.log('Uploading chairing resume:', fileName);
           uploadPromises.push(
             uploadToCloudinary(resumeFile.buffer, fileName, resumeFile.mimetype)
               .then(url => { 
-                console.log('Chairing resume uploaded successfully:', url);
                 fileUrls.chairingResumeUrl = url; 
               })
               .catch(error => {
@@ -202,12 +185,8 @@ module.exports = async (req, res) => {
           );
         }
 
-        console.log('Waiting for all uploads to complete...');
-
         // Wait for all file uploads to complete
         await Promise.all(uploadPromises);
-
-        console.log('All uploads completed. File URLs:', fileUrls);
 
         // Prepare data for Firestore
         const formData = {
@@ -233,12 +212,8 @@ module.exports = async (req, res) => {
           submittedAt: new Date().toISOString()
         };
 
-        console.log('Saving to Firestore:', formData);
-
         // Save to Firestore
         const docRef = await addDocument(COLLECTIONS.REGISTRATIONS, formData);
-
-        console.log('Document saved with ID:', docRef.id);
 
         res.status(201).json({
           success: true,
@@ -259,8 +234,6 @@ module.exports = async (req, res) => {
       }
 
     } else {
-      console.log('Processing JSON data...');
-      
       // Handle JSON data (fallback for backward compatibility)
       const formData = req.body;
       

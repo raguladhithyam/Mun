@@ -21,7 +21,6 @@ module.exports = async (req, res) => {
   }
 
   try {
-    console.log('📊 Getting registration statistics');
     const stats = await getRegistrationStats();
     
     res.status(200).json({
