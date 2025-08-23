@@ -130,6 +130,21 @@ function initializeEventListeners() {
         elements.cancelBtn.addEventListener('click', cancelEditMode);
     }
     
+    // File Viewer Modal
+    const closeFileViewer = document.getElementById('closeFileViewer');
+    const fileViewerModal = document.getElementById('fileViewerModal');
+    
+    if (closeFileViewer) {
+        closeFileViewer.addEventListener('click', hideFileViewerModal);
+    }
+    if (fileViewerModal) {
+        fileViewerModal.addEventListener('click', (e) => {
+            if (e.target === fileViewerModal) {
+                hideFileViewerModal();
+            }
+        });
+    }
+    
     // Close modal when clicking outside
     if (elements.fileLinksModal) {
         elements.fileLinksModal.addEventListener('click', (e) => {
@@ -206,6 +221,12 @@ function initializeEventListeners() {
         registrationsTable.addEventListener('click', handleTableAction);
     }
     
+    // File link actions event delegation
+    document.addEventListener('click', handleFileLinkActions);
+    
+    // Multi-select and file removal event delegation
+    document.addEventListener('click', handleMultiSelectActions);
+    
     // File validation - only add if file inputs exist (for form page)
     const fileInputs = document.querySelectorAll('input[type="file"]');
     if (fileInputs.length > 0) {
@@ -225,6 +246,9 @@ function initializeEventListeners() {
             }
             if (elements.successModal && elements.successModal.style.display === 'flex') {
                 hideSuccessModal();
+            }
+            if (document.getElementById('fileViewerModal') && document.getElementById('fileViewerModal').style.display === 'flex') {
+                hideFileViewerModal();
             }
         }
     });
@@ -930,23 +954,260 @@ function hideFileLinksModal() {
     currentRegistration = null;
 }
 
+// Helper function to get file extension with improved detection
+function getFileExtension(fileName, url) {
+    console.log('File type detection:', { fileName, url });
+    
+    // First, try to get extension from the original filename
+    if (fileName && fileName.includes('.')) {
+        const extension = fileName.split('.').pop().toLowerCase();
+        if (extension && extension.length <= 4) { // Valid file extensions are usually 1-4 characters
+            console.log('Detected extension from filename:', extension);
+            return extension;
+        }
+    }
+    
+    // If no valid extension in filename, try to extract from URL
+    if (url && url.includes('.')) {
+        const urlExtension = url.split('.').pop().toLowerCase();
+        if (urlExtension && urlExtension.length <= 4) {
+            console.log('Detected extension from URL:', urlExtension);
+            return urlExtension;
+        }
+    }
+    
+    // For Cloudinary URLs, try to detect file type from the URL path
+    if (url && url.includes('cloudinary.com')) {
+        // Check if it's a raw upload (likely PDF or document)
+        if (url.includes('/raw/upload/')) {
+            // If the original filename suggests it's a PDF, return pdf
+            if (fileName && fileName.toLowerCase().includes('.pdf')) {
+                console.log('Detected PDF from filename pattern');
+                return 'pdf';
+            }
+            // Check for common document names that are typically PDFs
+            if (fileName && /(id.?card|mun.?certificates?|chairing.?resume|resume|certificate)/i.test(fileName)) {
+                console.log('Detected PDF from common document name pattern');
+                return 'pdf';
+            }
+            // If the original filename suggests it's an image, try to detect
+            if (fileName && /\.(jpg|jpeg|png|gif)$/i.test(fileName)) {
+                const imgExtension = fileName.split('.').pop().toLowerCase();
+                console.log('Detected image extension from filename:', imgExtension);
+                return imgExtension;
+            }
+        }
+        // Check if it's an image upload
+        else if (url.includes('/image/upload/')) {
+            console.log('Detected image upload from URL path');
+            return 'jpg'; // Default to jpg for image uploads
+        }
+    }
+    
+    console.log('No extension detected, returning unknown');
+    // Default fallback
+    return 'unknown';
+}
+
+// Function to view file in modal
+function viewFileInModal(url, fileName) {
+    const decodedUrl = decodeURIComponent(url);
+    
+    // Improved file type detection
+    const fileExtension = getFileExtension(fileName, decodedUrl);
+    
+    console.log('Viewing file in modal:', { fileName, fileExtension, decodedUrl });
+    
+    const modal = document.getElementById('fileViewerModal');
+    const title = document.getElementById('fileViewerTitle');
+    const content = document.getElementById('fileViewerContent');
+    
+    title.textContent = `Viewing: ${fileName}`;
+    
+    // Note: URL accessibility test removed to avoid CSP violations
+    // The iframe will handle loading errors gracefully
+    
+    // Create content based on file type
+    if (['pdf'].includes(fileExtension)) {
+        // For PDFs, try multiple viewing approaches
+        content.innerHTML = `
+            <div class="pdf-viewer">
+                <div class="pdf-iframe-container">
+                    <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(decodedUrl)}&embedded=true" 
+                            width="100%" height="100%" frameborder="0"
+                            style="border: 1px solid #ddd;"
+                            onload="console.log('Google Docs viewer loaded successfully')" 
+                            onerror="console.log('Google Docs viewer failed to load')">
+                        <p>Google Docs viewer not available. <a href="${decodedUrl}" target="_blank">Click here to open the PDF</a></p>
+                    </iframe>
+                </div>
+            </div>
+        `;
+    } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+        // For images, display directly
+        content.innerHTML = `
+            <div class="image-viewer">
+                <img src="${decodedUrl}" alt="${fileName}" style="max-width: 100%; height: auto;">
+            </div>
+        `;
+    } else if (['txt'].includes(fileExtension)) {
+        // For text files, fetch and display content
+        fetch(decodedUrl)
+            .then(response => response.text())
+            .then(text => {
+                content.innerHTML = `
+                    <div class="text-viewer">
+                        <pre style="white-space: pre-wrap; font-family: monospace; background: #f5f5f5; padding: 1rem; border-radius: 4px; max-height: 500px; overflow-y: auto;">${text}</pre>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                content.innerHTML = `
+                    <div class="error-viewer">
+                        <p>Unable to load text file. <a href="${decodedUrl}" target="_blank">Click here to download</a></p>
+                    </div>
+                `;
+            });
+    } else {
+        // For other file types, show download link
+        content.innerHTML = `
+            <div class="download-viewer">
+                <p>This file type cannot be previewed in the browser.</p>
+                <a href="${decodedUrl}" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-download"></i>
+                    Download File
+                </a>
+            </div>
+        `;
+    }
+    
+    modal.style.display = 'flex';
+}
+
+// Function to hide file viewer modal
+function hideFileViewerModal() {
+    const modal = document.getElementById('fileViewerModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+
+
+// Function to download file with proper filename
+function downloadFile(url, fileName) {
+    console.log('Downloading file:', { url, fileName });
+    
+    // Ensure the filename has the proper extension
+    let downloadFileName = fileName;
+    if (!downloadFileName.includes('.')) {
+        // If no extension, try to determine from URL or add default
+        if (url.includes('cloudinary.com') && url.includes('/raw/upload/')) {
+            downloadFileName += '.pdf'; // Default to PDF for raw uploads
+        }
+    }
+    
+    console.log('Final download filename:', downloadFileName);
+    
+    // Try the blob download method first
+    if (url.includes('cloudinary.com')) {
+        console.log('Attempting blob download for Cloudinary URL...');
+        
+        // Add a timestamp to prevent caching issues
+        const urlWithTimestamp = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+        
+        fetch(urlWithTimestamp)
+            .then(response => {
+                console.log('Fetch response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                console.log('Blob created, size:', blob.size);
+                // Create a blob URL
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                // Create a temporary anchor element
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = downloadFileName;
+                
+                // Append to body, click, and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Clean up the blob URL
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                }, 1000);
+                
+                console.log('Blob download successful for:', downloadFileName);
+            })
+            .catch(error => {
+                console.error('Blob download failed:', error);
+                console.log('Falling back to direct download...');
+                // Fallback to direct download
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = downloadFileName;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                console.log('Direct download fallback initiated for:', downloadFileName);
+            });
+    } else {
+        // For non-Cloudinary URLs, use direct download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = downloadFileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log('Direct download initiated for:', downloadFileName);
+    }
+}
+
 // Function to open files in new tab
 function openFileInNewTab(url, fileName) {
     // Decode the URL since we encoded it in the onclick handler
     const decodedUrl = decodeURIComponent(url);
     
-    // For PDF files, try to open in a new tab
-    if (decodedUrl.includes('.pdf') || decodedUrl.includes('cloudinary.com')) {
-        // Create a new window/tab with the file
-        const newWindow = window.open(decodedUrl, '_blank');
+    try {
+        // Improved file type detection
+        const fileExtension = getFileExtension(fileName, decodedUrl);
         
-        // If the window was blocked, show a message
-        if (!newWindow) {
-            showError('Popup blocked. Please allow popups for this site and try again.');
+        // For PDFs, images, and text files, try to open in browser
+        if (['pdf', 'jpg', 'jpeg', 'png', 'gif', 'txt'].includes(fileExtension) || 
+            decodedUrl.includes('cloudinary.com')) {
+            
+            // Create a new window/tab with the file
+            const newWindow = window.open(decodedUrl, '_blank');
+            
+            // If the window was blocked, show a message
+            if (!newWindow) {
+                showError('Popup blocked. Please allow popups for this site and try again.');
+            } else {
+                // Add a small delay to check if the window loaded successfully
+                setTimeout(() => {
+                    if (newWindow.closed) {
+                        showError('Unable to open file in browser. The file may have been blocked or is not supported.');
+                    }
+                }, 1000);
+            }
+        } else {
+            // For other file types (doc, docx, etc.), show a message
+            showError(`This file type (${fileExtension}) may not be viewable in the browser. It will be downloaded instead.`);
+            window.open(decodedUrl, '_blank');
         }
-    } else {
-        // For other file types, use the default behavior
-        window.open(decodedUrl, '_blank');
+    } catch (error) {
+        console.error('Error opening file:', error);
+        showError('Error opening file. Please try again.');
     }
 }
 
@@ -1109,6 +1370,52 @@ function handleTableAction(event) {
     }
 }
 
+// File link actions handler
+function handleFileLinkActions(event) {
+    const target = event.target;
+    
+    // Handle "View in Browser" clicks
+    const viewModalBtn = target.closest('.file-view-modal');
+    if (viewModalBtn) {
+        event.preventDefault();
+        const url = viewModalBtn.dataset.url;
+        const filename = viewModalBtn.dataset.filename;
+        if (url && filename) {
+            viewFileInModal(url, filename);
+        }
+        return;
+    }
+}
+
+// Handle multi-select and file removal actions
+function handleMultiSelectActions(event) {
+    const target = event.target;
+    
+    // Handle chip removal
+    const removeChipBtn = target.closest('.remove-chip-btn');
+    if (removeChipBtn) {
+        const value = removeChipBtn.dataset.value;
+        if (value) {
+            const checkbox = document.querySelector(`#recipientsOptions .option-item[data-value="${value}"] input[type="checkbox"]`);
+            if (checkbox) {
+                checkbox.checked = false;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        }
+        return;
+    }
+    
+    // Handle file removal
+    const removeFileBtn = target.closest('.remove-file-btn');
+    if (removeFileBtn) {
+        const index = parseInt(removeFileBtn.dataset.index);
+        if (!isNaN(index)) {
+            removeFile(index);
+        }
+        return;
+    }
+}
+
 // Global variable to store current registration being viewed/edited
 let currentRegistration = null;
 
@@ -1164,20 +1471,38 @@ function generateRegistrationDetailsHTML(registration) {
     // Generate file links
     const fileLinks = [];
     
-    // Helper function to convert Cloudinary raw URLs to viewer URLs
+    // Helper function to convert Cloudinary URLs to viewer URLs
     const getViewerUrl = (url) => {
         if (!url) return url;
-        // For Cloudinary URLs, remove any fl_attachment parameter to allow inline viewing
-        if (url.includes('cloudinary.com') && url.includes('/raw/upload/')) {
-            // Remove fl_attachment parameter if it exists to prevent forced download
-            return url.replace(/[?&]fl_attachment[^&]*/g, '');
+        
+        // For Cloudinary URLs, ensure they open in browser instead of downloading
+        if (url.includes('cloudinary.com')) {
+            let modifiedUrl = url;
+            
+            // Remove any fl_attachment parameter to prevent forced download
+            modifiedUrl = modifiedUrl.replace(/[?&]fl_attachment[^&]*/g, '');
+            
+            // For PDFs and raw uploads, ensure they can be viewed inline
+            if (url.includes('.pdf') || url.includes('/raw/upload/')) {
+                // Don't add any parameters that might interfere with iframe loading
+                // The raw upload should work fine without additional parameters
+                console.log('Using clean URL for PDF viewing:', modifiedUrl);
+            }
+            
+            // For images, ensure they're served as images
+            if (url.includes('/image/upload/')) {
+                const separator = modifiedUrl.includes('?') ? '&' : '?';
+                modifiedUrl += `${separator}f_auto`;
+            }
+            
+            return modifiedUrl;
         }
         return url;
     };
     
     if (registration.idCardUrl) {
         fileLinks.push({
-            name: 'ID Card',
+            name: registration.idCardFilename || 'ID Card.pdf',
             url: getViewerUrl(registration.idCardUrl),
             icon: 'fas fa-id-card'
         });
@@ -1185,7 +1510,7 @@ function generateRegistrationDetailsHTML(registration) {
     
     if (registration.munCertificatesUrl) {
         fileLinks.push({
-            name: 'MUN Certificates',
+            name: registration.munCertificatesFilename || 'MUN Certificates.pdf',
             url: getViewerUrl(registration.munCertificatesUrl),
             icon: 'fas fa-certificate'
         });
@@ -1193,7 +1518,7 @@ function generateRegistrationDetailsHTML(registration) {
     
     if (registration.chairingResumeUrl) {
         fileLinks.push({
-            name: 'Chairing Resume',
+            name: registration.chairingResumeFilename || 'Chairing Resume.pdf',
             url: getViewerUrl(registration.chairingResumeUrl),
             icon: 'fas fa-file-alt'
         });
@@ -1323,9 +1648,12 @@ function generateRegistrationDetailsHTML(registration) {
                                 <i class="${file.icon}"></i>
                                 <h5>${file.name}</h5>
                             </div>
-                            <a href="${file.url}" target="_blank" class="file-link-url" onclick="openFileInNewTab('${encodeURIComponent(file.url)}', '${file.name.replace(/'/g, "\\'")}')">
-                                ${file.url}
-                            </a>
+                            <div class="file-link-actions">
+                                <button class="btn btn-outline btn-sm file-view-modal" data-url="${encodeURIComponent(file.url)}" data-filename="${file.name.replace(/"/g, '&quot;')}">
+                                    <i class="fas fa-eye"></i>
+                                    View in Browser
+                                </button>
+                            </div>
                         </div>
                     `).join('') : 
                     '<div class="no-files-message">No files uploaded for this registration.</div>'
@@ -1700,7 +2028,7 @@ function initializeCustomMultiSelect() {
         chip.dataset.value = value;
         chip.innerHTML = `
             ${label}
-            <span class="remove-chip" onclick="removeChipFromDropdown('${value}')">
+            <span class="remove-chip remove-chip-btn" data-value="${value}">
                 <i class="fas fa-times"></i>
             </span>
         `;
@@ -1742,17 +2070,10 @@ function initializeCustomMultiSelect() {
         });
     }
     
-    // Global function for removing chips (accessible from HTML)
-    window.removeChipFromDropdown = function(value) {
-        const checkbox = document.querySelector(`#recipientsOptions .option-item[data-value="${value}"] input[type="checkbox"]`);
-        if (checkbox) {
-            checkbox.checked = false;
-            checkbox.dispatchEvent(new Event('change'));
-        }
-    };
+
     
-    // Global function to reset the custom dropdown
-    window.resetCustomDropdown = function() {
+    // Function to reset the custom dropdown
+    function resetCustomDropdown() {
         // Clear all selected values
         selectedValues.clear();
         
@@ -1774,7 +2095,7 @@ function initializeCustomMultiSelect() {
         
         // Close dropdown if open
         closeDropdown();
-    };
+    }
 }
 
 // File Upload Handling for Mailer
@@ -1872,7 +2193,7 @@ function createFileItem(file, index) {
                 <div class="file-item-size">${fileSize}</div>
             </div>
         </div>
-        <button type="button" class="file-item-remove" onclick="removeFile(${index})">
+        <button type="button" class="file-item-remove remove-file-btn" data-index="${index}">
             <i class="fas fa-times"></i>
         </button>
     `;

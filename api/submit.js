@@ -226,6 +226,10 @@ module.exports = async (req, res) => {
           idCardUrl: fileUrls.idCardUrl,
           munCertificatesUrl: fileUrls.munCertificatesUrl || null,
           chairingResumeUrl: fileUrls.chairingResumeUrl || null,
+          // Store original filenames for better file type detection
+          idCardFilename: req.files.idCard ? req.files.idCard[0].originalname : null,
+          munCertificatesFilename: req.files.munCertificates ? req.files.munCertificates[0].originalname : null,
+          chairingResumeFilename: req.files.chairingResume ? req.files.chairingResume[0].originalname : null,
           submittedAt: new Date().toISOString()
         };
 

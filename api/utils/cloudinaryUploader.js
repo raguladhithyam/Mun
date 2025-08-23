@@ -22,23 +22,47 @@ async function uploadToCloudinary(fileBuffer, fileName, contentType) {
     const base64String = fileBuffer.toString('base64');
     const dataURI = `data:${contentType};base64,${base64String}`;
 
-    // Upload to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(dataURI, {
-      public_id: `pdf_form_uploads/${Date.now()}_${fileName}`,
-      resource_type: 'raw',
+    // Determine resource type based on content type
+    let resourceType = 'auto';
+    
+    // Preserve file extension in public_id for better file type detection
+    const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : '';
+    const fileNameWithoutExt = fileName.includes('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+    
+    let uploadOptions = {
+      public_id: `pdf_form_uploads/${Date.now()}_${fileNameWithoutExt}${fileExtension ? '.' + fileExtension : ''}`,
       folder: 'pdf_form_uploads',
       use_filename: true,
       unique_filename: true,
       access_mode: 'public',
       type: 'upload'
-    });
+    };
+
+    // For PDFs, use 'raw' resource type
+    if (contentType === 'application/pdf') {
+      resourceType = 'raw';
+    }
+    // For images, use 'image' resource type
+    else if (contentType.startsWith('image/')) {
+      resourceType = 'image';
+    }
+    // For other files, use 'raw' resource type
+    else {
+      resourceType = 'raw';
+    }
+
+    uploadOptions.resource_type = resourceType;
+
+    // Upload to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(dataURI, uploadOptions);
 
     console.log(`File uploaded successfully: ${fileName}`);
     console.log('Upload result:', {
       public_id: uploadResult.public_id,
       secure_url: uploadResult.secure_url,
       format: uploadResult.format,
-      bytes: uploadResult.bytes
+      bytes: uploadResult.bytes,
+      resource_type: uploadResult.resource_type
     });
 
     // Return the secure URL

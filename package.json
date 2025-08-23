@@ -4,7 +4,7 @@
   "description": "KMUN'25 Executive Board Recruitment System - Vercel Deployment",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "nodemon server.js",
     "dev": "nodemon server.js",
     "build": "echo 'No build step required'",
     "vercel-build": "echo 'Vercel build completed'"

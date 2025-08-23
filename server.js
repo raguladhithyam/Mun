@@ -20,9 +20,10 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
             scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+            scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"],
-            frameSrc: ["'none'"],
+            connectSrc: ["'self'", "https://res.cloudinary.com", "https://docs.google.com"],
+            frameSrc: ["'self'", "https:", "data:"],
             objectSrc: ["'none'"]
         }
     }
