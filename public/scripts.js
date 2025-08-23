@@ -2,6 +2,10 @@
 let currentRegistrations = [];
 let dashboardLoaded = false;
 
+// OTP Authentication variables
+let otpSession = null;
+let adminUsers = [];
+
 // Check if Axios is available, if not, create a simple fallback
 if (typeof axios === 'undefined') {
     console.warn('Axios not loaded, using fallback HTTP client');
@@ -572,18 +576,9 @@ function initializePage() {
     console.log('Initializing page for path:', path);
     
     if (path === '/admin') {
-        // Admin page specific initialization
-        if (elements.adminDashboard && !dashboardLoaded) {
-            console.log('Admin dashboard found, loading data...');
-            // Add a small delay to ensure DOM is fully ready
-            setTimeout(() => {
-                if (!dashboardLoaded) {
-                    loadDashboardData();
-                }
-            }, 100);
-        } else {
-            console.log('Admin dashboard element not found or already loaded');
-        }
+        // Admin page - initialize OTP authentication
+        console.log('Initializing admin page with OTP authentication...');
+        initializeOTPAuth();
     } else if (path === '/form') {
         // Form page specific initialization
         console.log('Application form initialized');
@@ -2245,4 +2240,291 @@ function removeFile(index) {
     
     // Update display
     displaySelectedFiles(files);
+}
+
+// OTP Authentication Functions
+function initializeOTPAuth() {
+    // Check if user is already authenticated
+    const savedSession = localStorage.getItem('adminSession');
+    if (savedSession) {
+        try {
+            otpSession = JSON.parse(savedSession);
+            const now = new Date().getTime();
+            if (otpSession.expiresAt > now) {
+                showAdminDashboard();
+                return;
+            } else {
+                localStorage.removeItem('adminSession');
+            }
+        } catch (error) {
+            localStorage.removeItem('adminSession');
+        }
+    }
+    
+    showOTPLoginScreen();
+}
+
+function showOTPLoginScreen() {
+    const otpScreen = document.getElementById('otpLoginScreen');
+    const mainContent = document.querySelector('.main-content');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (otpScreen) otpScreen.style.display = 'flex';
+    if (mainContent) mainContent.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    
+    // Initialize OTP event listeners
+    initializeOTPEventListeners();
+}
+
+function showAdminDashboard() {
+    const otpScreen = document.getElementById('otpLoginScreen');
+    const mainContent = document.querySelector('.main-content');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (otpScreen) otpScreen.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'block';
+    if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+    
+    // Load dashboard data if not already loaded
+    if (!dashboardLoaded) {
+        loadDashboardData();
+    }
+}
+
+function initializeOTPEventListeners() {
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+    const resendOtpBtn = document.getElementById('resendOtpBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (sendOtpBtn) {
+        sendOtpBtn.addEventListener('click', sendOTP);
+    }
+    
+    if (verifyOtpBtn) {
+        verifyOtpBtn.addEventListener('click', verifyOTP);
+    }
+    
+    if (resendOtpBtn) {
+        resendOtpBtn.addEventListener('click', sendOTP);
+    }
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+    
+    // Enter key support
+    const adminEmail = document.getElementById('adminEmail');
+    const otpCode = document.getElementById('otpCode');
+    
+    if (adminEmail) {
+        adminEmail.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendOTP();
+            }
+        });
+    }
+    
+    if (otpCode) {
+        otpCode.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                verifyOTP();
+            }
+        });
+    }
+}
+
+async function sendOTP() {
+    const emailInput = document.getElementById('adminEmail');
+    const email = emailInput.value.trim();
+    
+    if (!email) {
+        showError('Please enter your email address');
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showError('Please enter a valid email address');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await axios.post('/api/admin/send-otp', { email });
+        
+        if (response.data.success) {
+            showSuccess('OTP sent successfully! Check your email.');
+            
+            // Show OTP verification form
+            const otpForm = document.getElementById('otpVerificationForm');
+            const loginForm = document.querySelector('.otp-login-form');
+            
+            if (otpForm) otpForm.style.display = 'block';
+            if (loginForm) loginForm.style.display = 'none';
+            
+            // Focus on OTP input
+            const otpInput = document.getElementById('otpCode');
+            if (otpInput) otpInput.focus();
+            
+        } else {
+            showError(response.data.message || 'Failed to send OTP');
+        }
+    } catch (error) {
+        console.error('Error sending OTP:', error);
+        
+        // Show specific error message from server if available
+        if (error.response && error.response.data && error.response.data.message) {
+            showError(error.response.data.message);
+        } else {
+            showError('Failed to send OTP. Please try again.');
+        }
+    } finally {
+        hideLoading();
+    }
+}
+
+async function verifyOTP() {
+    const emailInput = document.getElementById('adminEmail');
+    const otpInput = document.getElementById('otpCode');
+    const email = emailInput.value.trim();
+    const otp = otpInput.value.trim();
+    
+    if (!otp) {
+        showError('Please enter the OTP');
+        return;
+    }
+    
+    if (!otp.match(/^\d{6}$/)) {
+        showError('Please enter a valid 6-digit OTP');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await axios.post('/api/admin/verify-otp', { email, otp });
+        
+        if (response.data.success) {
+            // Create session
+            otpSession = {
+                email: email,
+                expiresAt: new Date().getTime() + (24 * 60 * 60 * 1000), // 24 hours
+                token: response.data.token
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('adminSession', JSON.stringify(otpSession));
+            
+            showSuccess('Authentication successful!');
+            
+            // Show admin dashboard
+            setTimeout(() => {
+                showAdminDashboard();
+            }, 1000);
+            
+        } else {
+            showError(response.data.message || 'Invalid OTP');
+        }
+    } catch (error) {
+        console.error('Error verifying OTP:', error);
+        
+        // Show specific error message from server if available
+        if (error.response && error.response.data && error.response.data.message) {
+            showError(error.response.data.message);
+        } else {
+            showError('Failed to verify OTP. Please try again.');
+        }
+    } finally {
+        hideLoading();
+    }
+}
+
+function logout() {
+    // Clear session
+    otpSession = null;
+    localStorage.removeItem('adminSession');
+    
+    // Show login screen
+    showOTPLoginScreen();
+    
+    // Clear forms
+    const emailInput = document.getElementById('adminEmail');
+    const otpInput = document.getElementById('otpCode');
+    const otpForm = document.getElementById('otpVerificationForm');
+    const loginForm = document.querySelector('.otp-login-form');
+    
+    if (emailInput) emailInput.value = '';
+    if (otpInput) otpInput.value = '';
+    if (otpForm) otpForm.style.display = 'none';
+    if (loginForm) loginForm.style.display = 'block';
+    
+    showSuccess('Logged out successfully');
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Toast Notification Functions
+function showToast(type, title, message, duration = 5000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const iconMap = {
+        success: 'fas fa-check-circle',
+        error: 'fas fa-exclamation-circle',
+        warning: 'fas fa-exclamation-triangle',
+        info: 'fas fa-info-circle'
+    };
+    
+    toast.innerHTML = `
+        <i class="${iconMap[type] || iconMap.info} toast-icon"></i>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 300);
+    }, duration);
+}
+
+// Update existing showSuccess and showError functions to use toast
+function showSuccess(message) {
+    showToast('success', 'Success', message);
+}
+
+function showError(message) {
+    showToast('error', 'Error', message);
+}
+
+function showWarning(message) {
+    showToast('warning', 'Warning', message);
+}
+
+function showInfo(message) {
+    showToast('info', 'Info', message);
 }

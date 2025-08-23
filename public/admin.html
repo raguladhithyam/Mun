@@ -31,12 +31,51 @@
                         <i class="fas fa-home"></i>
                         Back to Home
                     </a>
+                    <button id="logoutBtn" class="btn btn-danger" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
                 </div>
             </div>
         </header>
 
+        <!-- OTP Login Screen -->
+        <div id="otpLoginScreen" class="otp-login-screen">
+            <div class="otp-login-container">
+                <div class="otp-login-header">
+                    <img src="/logo.png" alt="Kumaraguru MUN Logo" class="logo-image" onerror="this.style.display='none'">
+                    <h1>Admin Access</h1>
+                    <p>Enter your email to receive OTP</p>
+                </div>
+                <div class="otp-login-form">
+                    <div class="form-group">
+                        <label for="adminEmail">Email Address</label>
+                        <input type="email" id="adminEmail" placeholder="Enter your email" required>
+                    </div>
+                    <button id="sendOtpBtn" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                        Send OTP
+                    </button>
+                </div>
+                <div id="otpVerificationForm" class="otp-verification-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="otpCode">Enter OTP</label>
+                        <input type="text" id="otpCode" placeholder="Enter 6-digit OTP" maxlength="6" required>
+                    </div>
+                    <button id="verifyOtpBtn" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        Verify OTP
+                    </button>
+                    <button id="resendOtpBtn" class="btn btn-outline">
+                        <i class="fas fa-redo"></i>
+                        Resend OTP
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content" style="display: none;">
             <!-- Admin Dashboard -->
             <div id="adminDashboard" class="admin-dashboard">
                 <div class="dashboard-header">
@@ -396,6 +435,9 @@
 
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <!-- Load external libraries -->
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
