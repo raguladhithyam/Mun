@@ -2352,7 +2352,7 @@ async function sendOTP() {
     try {
         showLoading();
         
-        const response = await axios.post('/api/admin/send-otp', { email });
+        const response = await axios.post('/api/admin/otp', { action: 'send', email });
         
         if (response.data.success) {
             showSuccess('OTP sent successfully! Check your email.');
@@ -2404,7 +2404,7 @@ async function verifyOTP() {
     try {
         showLoading();
         
-        const response = await axios.post('/api/admin/verify-otp', { email, otp });
+        const response = await axios.post('/api/admin/otp', { action: 'verify', email, otp });
         
         if (response.data.success) {
             // Create session

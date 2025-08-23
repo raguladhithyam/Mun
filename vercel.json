@@ -46,12 +46,8 @@
       "dest": "/api/admin/send-mail.js"
     },
     {
-      "src": "/api/admin/send-otp",
-      "dest": "/api/admin/send-otp.js"
-    },
-    {
-      "src": "/api/admin/verify-otp",
-      "dest": "/api/admin/verify-otp.js"
+      "src": "/api/admin/otp",
+      "dest": "/api/admin/otp.js"
     },
     {
       "src": "/form",
