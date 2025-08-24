@@ -34,6 +34,8 @@
             z-index: 1000;
             backdrop-filter: blur(10px);
             background: rgba(255, 255, 255, 0.95);
+            height: auto;
+            min-height: 80px;
         }
 
         .header-content {
@@ -43,6 +45,7 @@
             padding: 1rem 2rem;
             max-width: 1400px;
             margin: 0 auto;
+            min-height: 80px;
         }
 
         .logo {
@@ -107,11 +110,14 @@
 
         /* Hero Container */
         .hero-container {
-            height: 90vh;
+            min-height: 90vh;
             position: relative;
             margin-top: 80px; /* Account for fixed header */
+            padding: 2rem 0 0 0; /* Remove bottom padding */
             background: #172d9d;
             overflow: hidden;
+            display: flex;
+            align-items: center;
         }
 
         .top-band {
@@ -127,7 +133,7 @@
         .hero-content {
             position: relative;
             z-index: 2;
-            height: 100%;
+            width: 100%;
             display: flex;
             align-items: center;
             padding: 2rem;
@@ -296,7 +302,7 @@
         /* Large screens (1200px and up) */
         @media (min-width: 1200px) {
             .hero-container {
-                height: 90vh;
+                min-height: 90vh;
             }
             
             .hero-text {
@@ -312,7 +318,8 @@
         /* Medium screens (768px to 1199px) */
         @media (min-width: 768px) and (max-width: 1199px) {
             .hero-container {
-                height: 85vh;
+                min-height: 85vh;
+                padding: 1.5rem 0 0 0;
             }
             
             .hero-text {
@@ -339,10 +346,15 @@
         
         /* Small screens (768px and below) */
         @media (max-width: 768px) {
+            .header {
+                min-height: 120px;
+            }
+            
             .header-content {
                 padding: 1rem;
                 flex-direction: column;
                 gap: 1rem;
+                min-height: 120px;
             }
             
             .nav {
@@ -352,8 +364,9 @@
             }
             
             .hero-container {
-                margin-top: 120px; /* More space for stacked header */
-                height: 100vh;
+                margin-top: 140px; /* More space for stacked header */
+                min-height: 100vh;
+                padding: 1rem 0 0 0;
             }
             
             .hero-content {
@@ -361,6 +374,7 @@
                 flex-direction: column;
                 justify-content: center;
                 text-align: center;
+                min-height: calc(100vh - 140px);
             }
             
             .hero-text {
@@ -409,13 +423,23 @@
 
         /* Extra small screens (480px and below) */
         @media (max-width: 480px) {
+            .header {
+                min-height: 110px;
+            }
+            
+            .header-content {
+                min-height: 110px;
+            }
+            
             .hero-container {
-                height: 100vh;
-                margin-top: 100px;
+                min-height: 100vh;
+                margin-top: 130px;
+                padding: 0.5rem 0 0 0;
             }
             
             .hero-content {
                 padding: 0.5rem;
+                min-height: calc(100vh - 130px);
             }
             
             .dome-image {
@@ -490,8 +514,6 @@
                     <h4>Contact Information</h4>
                     <p><strong>Mail us at:</strong></p>
                     <p>mun@kct.ac.in</p>
-                    <p><strong>Know about us at:</strong></p>
-                    <p>https://bento.me/kmun</p>
                 </div>
                 <div class="footer-section footer-logo">
                     <img src="KI.png" alt="Kumaraguru Institutions Logo" class="footer-logo-image">
