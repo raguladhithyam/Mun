@@ -22,8 +22,15 @@ async function uploadToCloudinary(fileBuffer, fileName, contentType) {
     const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : '';
     const fileNameWithoutExt = fileName.includes('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
     
+    // Sanitize the public_id to remove any whitespace and invalid characters
+    const sanitizedFileNameWithoutExt = fileNameWithoutExt.trim().replace(/\s+/g, '_');
+    const sanitizedFileExtension = fileExtension ? fileExtension.trim() : '';
+    
+    // Final validation to ensure public_id doesn't end with whitespace
+    const publicId = `pdf_form_uploads/${Date.now()}_${sanitizedFileNameWithoutExt}${sanitizedFileExtension ? '.' + sanitizedFileExtension : ''}`.trim();
+    
     let uploadOptions = {
-      public_id: `pdf_form_uploads/${Date.now()}_${fileNameWithoutExt}${fileExtension ? '.' + fileExtension : ''}`,
+      public_id: publicId,
       folder: 'pdf_form_uploads',
       use_filename: true,
       unique_filename: true,

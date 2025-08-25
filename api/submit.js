@@ -134,8 +134,8 @@ module.exports = async (req, res) => {
         // Upload ID Card
         if (req.files.idCard) {
           const idCardFile = req.files.idCard[0];
-          // Remove file extension from originalname to prevent double extensions
-          const originalNameWithoutExt = idCardFile.originalname.replace(/\.pdf$/i, '');
+          // Remove file extension from originalname to prevent double extensions and trim whitespace
+          const originalNameWithoutExt = idCardFile.originalname.replace(/\.pdf$/i, '').trim();
           const fileName = `${Date.now()}_id-card_${originalNameWithoutExt}`;
           uploadPromises.push(
             uploadToCloudinary(idCardFile.buffer, fileName, idCardFile.mimetype)
@@ -152,8 +152,8 @@ module.exports = async (req, res) => {
         // Upload MUN Certificates (optional)
         if (req.files.munCertificates) {
           const certFile = req.files.munCertificates[0];
-          // Remove file extension from originalname to prevent double extensions
-          const originalNameWithoutExt = certFile.originalname.replace(/\.pdf$/i, '');
+          // Remove file extension from originalname to prevent double extensions and trim whitespace
+          const originalNameWithoutExt = certFile.originalname.replace(/\.pdf$/i, '').trim();
           const fileName = `${Date.now()}_certificates_${originalNameWithoutExt}`;
           uploadPromises.push(
             uploadToCloudinary(certFile.buffer, fileName, certFile.mimetype)
@@ -170,8 +170,8 @@ module.exports = async (req, res) => {
         // Upload Chairing Resume (optional)
         if (req.files.chairingResume) {
           const resumeFile = req.files.chairingResume[0];
-          // Remove file extension from originalname to prevent double extensions
-          const originalNameWithoutExt = resumeFile.originalname.replace(/\.pdf$/i, '');
+          // Remove file extension from originalname to prevent double extensions and trim whitespace
+          const originalNameWithoutExt = resumeFile.originalname.replace(/\.pdf$/i, '').trim();
           const fileName = `${Date.now()}_resume_${originalNameWithoutExt}`;
           uploadPromises.push(
             uploadToCloudinary(resumeFile.buffer, fileName, resumeFile.mimetype)
@@ -279,7 +279,9 @@ module.exports = async (req, res) => {
           if (fileData && fileData.data) {
             try {
               const buffer = Buffer.from(fileData.data, 'base64');
-              const fileName = `${Date.now()}_${fieldName}_${fileData.name}`;
+              // Sanitize the file name to remove whitespace
+              const sanitizedFileName = fileData.name ? fileData.name.trim() : 'file';
+              const fileName = `${Date.now()}_${fieldName}_${sanitizedFileName}`;
               const fileUrl = await uploadToCloudinary(buffer, fileName, fileData.type);
               fileUrls[fieldName] = fileUrl;
             } catch (uploadError) {

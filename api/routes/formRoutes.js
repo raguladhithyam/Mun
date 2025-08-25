@@ -95,8 +95,8 @@ router.post('/', upload.fields([
         // Upload ID Card
         if (req.files.idCard) {
             const idCardFile = req.files.idCard[0];
-            // Remove file extension from originalname to prevent double extensions
-            const originalNameWithoutExt = idCardFile.originalname.replace(/\.pdf$/i, '');
+            // Remove file extension from originalname to prevent double extensions and trim whitespace
+            const originalNameWithoutExt = idCardFile.originalname.replace(/\.pdf$/i, '').trim();
             const fileName = `${Date.now()}_id-card_${originalNameWithoutExt}`;
             uploadPromises.push(
                 uploadToCloudinary(idCardFile.buffer, fileName, idCardFile.mimetype)
@@ -113,8 +113,8 @@ router.post('/', upload.fields([
         // Upload MUN Certificates (optional)
         if (req.files.munCertificates) {
             const certFile = req.files.munCertificates[0];
-            // Remove file extension from originalname to prevent double extensions
-            const originalNameWithoutExt = certFile.originalname.replace(/\.pdf$/i, '');
+            // Remove file extension from originalname to prevent double extensions and trim whitespace
+            const originalNameWithoutExt = certFile.originalname.replace(/\.pdf$/i, '').trim();
             const fileName = `${Date.now()}_certificates_${originalNameWithoutExt}`;
             uploadPromises.push(
                 uploadToCloudinary(certFile.buffer, fileName, certFile.mimetype)
@@ -131,8 +131,8 @@ router.post('/', upload.fields([
         // Upload Chairing Resume (optional)
         if (req.files.chairingResume) {
             const resumeFile = req.files.chairingResume[0];
-            // Remove file extension from originalname to prevent double extensions
-            const originalNameWithoutExt = resumeFile.originalname.replace(/\.pdf$/i, '');
+            // Remove file extension from originalname to prevent double extensions and trim whitespace
+            const originalNameWithoutExt = resumeFile.originalname.replace(/\.pdf$/i, '').trim();
             const fileName = `${Date.now()}_resume_${originalNameWithoutExt}`;
             uploadPromises.push(
                 uploadToCloudinary(resumeFile.buffer, fileName, resumeFile.mimetype)

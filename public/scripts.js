@@ -322,7 +322,10 @@ function validateFile(event) {
     
     // Check file type
     if (file.type !== 'application/pdf') {
-        showError('Only PDF files are allowed.');
+        const fieldName = input.id === 'idCard' ? 'ID Card' : 
+                         input.id === 'munCertificates' ? 'MUN Certificates' : 
+                         input.id === 'chairingResume' ? 'Chairing Resume' : 'file';
+        showError(`${fieldName}: Only PDF files are allowed. Please select a PDF file.`);
         input.value = '';
         updateFileDisplay(input, input.parentElement.querySelector('.file-input-display span'));
         return;
@@ -332,11 +335,20 @@ function validateFile(event) {
     const maxSize = input.id === 'chairingResume' ? 3 * 1024 * 1024 : 2 * 1024 * 1024; // 3MB or 2MB
     if (file.size > maxSize) {
         const maxSizeMB = maxSize / (1024 * 1024);
-        showError(`File size must be less than ${maxSizeMB}MB.`);
+        const fieldName = input.id === 'idCard' ? 'ID Card' : 
+                         input.id === 'munCertificates' ? 'MUN Certificates' : 
+                         input.id === 'chairingResume' ? 'Chairing Resume' : 'file';
+        showError(`${fieldName}: File size must be less than ${maxSizeMB}MB. Please select a smaller file.`);
         input.value = '';
         updateFileDisplay(input, input.parentElement.querySelector('.file-input-display span'));
         return;
     }
+    
+    // Show success message for valid file
+    const fieldName = input.id === 'idCard' ? 'ID Card' : 
+                     input.id === 'munCertificates' ? 'MUN Certificates' : 
+                     input.id === 'chairingResume' ? 'Chairing Resume' : 'file';
+    showSuccess(`${fieldName} uploaded successfully!`);
 }
 
 // Form submission handler
@@ -349,17 +361,53 @@ async function handleFormSubmission(event) {
         // Get form data
         const formData = new FormData(elements.form);
         
-        // Validate required fields
-        const requiredFields = ['name', 'email', 'phone', 'college', 'department', 'year'];
+        // Validate required fields with more specific error messages
+        const requiredFields = [
+            { name: 'name', label: 'Full Name' },
+            { name: 'email', label: 'Email Address' },
+            { name: 'phone', label: 'Phone Number' },
+            { name: 'college', label: 'College/Institution' },
+            { name: 'department', label: 'Department of Study' },
+            { name: 'year', label: 'Year of Study' }
+        ];
+        
         for (const field of requiredFields) {
-            if (!formData.get(field)) {
-                throw new Error(`Please fill in all required fields. Missing: ${field}`);
+            const value = formData.get(field.name);
+            if (!value || value.trim() === '') {
+                throw new Error(`Please fill in your ${field.label}.`);
+            }
+        }
+        
+        // Validate email format
+        const email = formData.get('email');
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            throw new Error('Please enter a valid email address.');
+        }
+        
+        // Validate phone number (basic validation)
+        const phone = formData.get('phone');
+        if (phone.length < 10) {
+            throw new Error('Please enter a valid phone number (at least 10 digits).');
+        }
+        
+        // Validate numeric fields
+        const numericFields = [
+            { name: 'munsParticipated', label: 'Number of MUNs participated' },
+            { name: 'munsWithAwards', label: 'Number of MUNs won awards' },
+            { name: 'munsChaired', label: 'Number of MUNs chaired' }
+        ];
+        
+        for (const field of numericFields) {
+            const value = formData.get(field.name);
+            if (value && (isNaN(value) || parseInt(value) < 0)) {
+                throw new Error(`Please enter a valid number for ${field.label}.`);
             }
         }
         
         // Validate file uploads
         if (!formData.get('idCard')) {
-            throw new Error('Please upload your ID Card.');
+            throw new Error('Please upload your Aadhaar/ID Card (PDF format).');
         }
         
         // Get checkbox values
@@ -1248,47 +1296,70 @@ async function saveRegistration() {
 }
 
 function showSuccess(message) {
-    // Create a simple success notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #10b981;
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: 8px;
-        z-index: 1001;
-        animation: slideIn 0.3s ease-out;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
+    showToast('success', 'Success', message);
 }
 
 function showError(message) {
-    // Create a simple error notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #ef4444;
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: 8px;
-        z-index: 1001;
-        animation: slideIn 0.3s ease-out;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
+    showToast('error', 'Error', message);
+}
+
+function showWarning(message) {
+    showToast('warning', 'Warning', message);
+}
+
+function showInfo(message) {
+    showToast('info', 'Info', message);
+}
+
+// Toast Notification Function
+function showToast(type, title, message, duration = 5000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) {
+        // Fallback: create container if it doesn't exist
+        const fallbackContainer = document.createElement('div');
+        fallbackContainer.id = 'toastContainer';
+        fallbackContainer.className = 'toast-container';
+        document.body.appendChild(fallbackContainer);
+    }
     
+    const toastContainer = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const iconMap = {
+        success: 'fas fa-check-circle',
+        error: 'fas fa-exclamation-circle',
+        warning: 'fas fa-exclamation-triangle',
+        info: 'fas fa-info-circle'
+    };
+    
+    toast.innerHTML = `
+        <i class="${iconMap[type] || iconMap.info} toast-icon"></i>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Trigger animation
     setTimeout(() => {
-        notification.remove();
-    }, 5000);
+        toast.classList.add('show');
+    }, 100);
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 300);
+    }, duration);
 }
 
 
@@ -2425,63 +2496,3 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-// Toast Notification Functions
-function showToast(type, title, message, duration = 5000) {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-    
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const iconMap = {
-        success: 'fas fa-check-circle',
-        error: 'fas fa-exclamation-circle',
-        warning: 'fas fa-exclamation-triangle',
-        info: 'fas fa-info-circle'
-    };
-    
-    toast.innerHTML = `
-        <i class="${iconMap[type] || iconMap.info} toast-icon"></i>
-        <div class="toast-content">
-            <div class="toast-title">${title}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    container.appendChild(toast);
-    
-    // Trigger animation
-    setTimeout(() => {
-        toast.classList.add('show');
-    }, 100);
-    
-    // Auto remove after duration
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.remove();
-            }
-        }, 300);
-    }, duration);
-}
-
-// Update existing showSuccess and showError functions to use toast
-function showSuccess(message) {
-    showToast('success', 'Success', message);
-}
-
-function showError(message) {
-    showToast('error', 'Error', message);
-}
-
-function showWarning(message) {
-    showToast('warning', 'Warning', message);
-}
-
-function showInfo(message) {
-    showToast('info', 'Info', message);
-}
